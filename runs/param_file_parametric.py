@@ -18,7 +18,7 @@ path_wdir = os.environ['WDIR_halo7d']
 filter_folder = path_wdir + '/data/filters/'
 
 
-def build_obs(objid=0, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_floor=0.1, remove_mips24=False, **kwargs):
+def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_floor=0.05, remove_mips24=False, **kwargs):
     """Load photometry from an ascii file.  Assumes the following columns:
     `objid`, `filterset`, [`mag0`,....,`magN`] where N >= 11.  The User should
     modify this function (including adding keyword arguments) to read in their
@@ -44,6 +44,7 @@ def build_obs(objid=0, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     # array
     from astropy.table import Table
     catalog = Table.read(data_table)
+    idx_cat = objid-1
 
     # Here we are dynamically choosing which filters to use based on the object
     # and a flag in the catalog.  Feel free to make this logic more (or less)
@@ -51,11 +52,15 @@ def build_obs(objid=0, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     filternames = []
     mags = []
     mags_err = []
+    # field name
+    field_name_filters = catalog[idx_cat]['FIELD'].lower().replace("-", "")
+    if (field_name_filters == 'egs'):
+        field_name_filters = 'aegis'
     for ii in catalog.keys():
         if ('f_' in ii[:2]):
-            filternames.append(ii[2:].lower() + '_' + catalog[objid]['FIELD'].lower().replace("-", ""))
-            mags.append(catalog[objid][ii])
-            mags_err.append(catalog[objid][ii.replace('f_', 'e_')])
+            filternames.append(ii[2:].lower() + '_' + field_name_filters)
+            mags.append(catalog[idx_cat][ii])
+            mags_err.append(catalog[idx_cat][ii.replace('f_', 'e_')])
     filternames = np.array(filternames)
     mags = np.array(mags)
     mags_err = np.array(mags_err)
@@ -67,7 +72,7 @@ def build_obs(objid=0, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
         mags = mags[choice_non_mips]
         mags_err = mags_err[choice_non_mips]
     # ensure filters available
-    choice_finite = np.isfinite(np.squeeze(mags))
+    choice_finite = np.isfinite(np.squeeze(mags)) & (mags != -99.0)
     filternames = filternames[choice_finite]
     mags = mags[choice_finite]
     mags_err = mags_err[choice_finite]
@@ -85,21 +90,24 @@ def build_obs(objid=0, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     # Here we mask out any NaNs or infs
     obs['phot_mask'] = np.isfinite(np.squeeze(mags)) & (mags != mags_err) & (mags != -99.0) & (mags_err > 0)
     # We have a spectrum (should be units of maggies). wavelength in AA
-    mag_norm = catalog[objid]['f_F814W'] * 1e-10
-    idx_w = (catalog[objid]['LAM'] > 8040) & (catalog[objid]['LAM'] < 8240) & (catalog[objid]['ERR'] < 6000.0)
-    conversion_factor = mag_norm/np.median(catalog[objid]['FLUX'][idx_w].data)
-    obs['wavelength'] = catalog[objid]['LAM'].data
-    obs['spectrum'] = catalog[objid]['FLUX'].data * conversion_factor
-    obs['unc'] = np.clip(catalog[objid]['ERR'].data * conversion_factor, catalog[objid]['FLUX'].data * conversion_factor * err_floor, np.inf)
-    obs['mask'] = (catalog[objid]['ERR'].data < 6000.0) & (catalog[objid]['LAM'].data > (1.0 + catalog[objid]['ZSPEC']) * 3550) & ~((catalog[objid]['LAM'].data > (1.0 + catalog[objid]['ZSPEC']) * 3702) & (catalog[objid]['LAM'].data < (1.0 + catalog[objid]['ZSPEC']) * 3752)) & ~((catalog[objid]['LAM'].data > 6860) & (catalog[objid]['LAM'].data < 6920)) & ~((catalog[objid]['LAM'].data > 7150) & (catalog[objid]['LAM'].data < 7340)) & ~((catalog[objid]['LAM'].data > 7575) & (catalog[objid]['LAM'].data < 7725))
+    if np.isnan(catalog[idx_cat]['f_F814W']):
+        mag_norm = catalog[idx_cat]['f_F775W'] * 1e-10
+    else:
+        mag_norm = catalog[idx_cat]['f_F814W'] * 1e-10
+    idx_w = (catalog[idx_cat]['LAM'] > 8040) & (catalog[idx_cat]['LAM'] < 8240) & (catalog[idx_cat]['ERR'] < 6000.0)
+    conversion_factor = mag_norm/np.median(catalog[idx_cat]['FLUX'][idx_w].data)
+    obs['wavelength'] = catalog[idx_cat]['LAM'].data
+    obs['spectrum'] = catalog[idx_cat]['FLUX'].data * conversion_factor
+    obs['unc'] = np.clip(catalog[idx_cat]['ERR'].data * conversion_factor, catalog[idx_cat]['FLUX'].data * conversion_factor * err_floor, np.inf)
+    obs['mask'] = (catalog[idx_cat]['ERR'].data < 6000.0) & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3550) & ~((catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3702) & (catalog[idx_cat]['LAM'].data < (1.0 + catalog[idx_cat]['ZSPEC']) * 3752)) & ~((catalog[idx_cat]['LAM'].data > 6860) & (catalog[idx_cat]['LAM'].data < 6920)) & ~((catalog[idx_cat]['LAM'].data > 7150) & (catalog[idx_cat]['LAM'].data < 7340)) & ~((catalog[idx_cat]['LAM'].data > 7575) & (catalog[objid]['LAM'].data < 7725))
     # Add unessential bonus info.  This will be stored in output
     #obs['dmod'] = catalog[ind]['dmod']
-    obs['cat_row'] = objid
-    obs['id_halo7d'] = catalog[objid]['ID']
-    obs['id_3dhst'] = catalog[objid]['id_3dhst']
-    obs['RA'] = catalog[objid]['RA']
-    obs['DEC'] = catalog[objid]['DEC']
-    obs['redshift'] = catalog[objid]['ZSPEC']
+    obs['cat_row'] = idx_cat
+    obs['id_halo7d'] = catalog[idx_cat]['ID']
+    obs['id_3dhst'] = catalog[idx_cat]['id_3dhst']
+    obs['RA'] = catalog[idx_cat]['RA']
+    obs['DEC'] = catalog[idx_cat]['DEC']
+    obs['redshift'] = catalog[idx_cat]['ZSPEC']
     return obs
 
 
@@ -107,7 +115,7 @@ def build_obs(objid=0, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
 # Model Definition
 # --------------
 
-def build_model(objid=0, data_table=path_wdir + 'data/halo7d_with_phot.fits', add_duste=False, add_neb=False, add_agn=False, fit_continuum=False, **extras):
+def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', add_duste=False, add_neb=False, add_agn=False, fit_continuum=False, **extras):
     """Construct a model.  This method defines a number of parameter
     specification dictionaries and uses them to initialize a
     `models.sedmodel.SedModel` object.
@@ -125,6 +133,7 @@ def build_model(objid=0, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
     from astropy.table import Table
     # read in data table
     catalog = Table.read(data_table)
+    idx_cat = objid-1
     # --- Get a basic delay-tau SFH parameter set. ---
     # This has 5 free parameters:
     #   "mass", "logzsol", "dust2", "tage", "tau"
@@ -143,7 +152,7 @@ def build_model(objid=0, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
 
     # fit for redshift
     model_params["zred"]['isfree'] = True
-    model_params["zred"]["prior"] = priors.TopHat(mini=catalog[objid]['ZSPEC']-0.01, maxi=catalog[objid]['ZSPEC']+0.01)
+    model_params["zred"]["prior"] = priors.TopHat(mini=catalog[idx_cat]['ZSPEC']-0.01, maxi=catalog[idx_cat]['ZSPEC']+0.01)
 
     # velocity dispersion
     model_params.update(TemplateLibrary['spectral_smoothing'])
@@ -234,11 +243,14 @@ if __name__=='__main__':
     parser.add_argument('--data_table', type=str, default=path_wdir+"data/halo7d_with_phot.fits",
                         help="Names of table from which to get photometry.")
     parser.add_argument('--objid', type=int, default=0,
-                        help="zero-index row number in the table to fit.")
+                        help="Zero-index row number in the table to fit.")
+    parser.add_argument('--err_floor', type=np.float, default=0.05,
+                        help="Error floor for photometry and spectroscopy.")
 
     args = parser.parse_args()
     run_params = vars(args)
     print run_params
+
     obs, model, sps, noise = build_all(**run_params)
     run_params["param_file"] = __file__
 
@@ -246,7 +258,7 @@ if __name__=='__main__':
         sys.exit()
 
     #hfile = setup_h5(model=model, obs=obs, **run_params)
-    hfile = path_wdir + "results/{0}_objid_{1}.h5".format(args.outfile, int(args.objid))
+    hfile = path_wdir + "results/{0}_idx{1}.h5".format(args.outfile, int(args.objid)-1)
     output = fit_model(obs, model, sps, noise, **run_params)
 
     writer.write_hdf5(hfile, run_params, model, obs,
