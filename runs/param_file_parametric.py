@@ -258,7 +258,7 @@ if __name__=='__main__':
         sys.exit()
 
     #hfile = setup_h5(model=model, obs=obs, **run_params)
-    hfile = path_wdir + "results/{0}_idx{1}.h5".format(args.outfile, int(args.objid)-1)
+    hfile = path_wdir + "results/{0}_idx{1}_mcmc.h5".format(args.outfile, int(args.objid)-1)
     output = fit_model(obs, model, sps, noise, **run_params)
 
     writer.write_hdf5(hfile, run_params, model, obs,
