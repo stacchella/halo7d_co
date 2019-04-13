@@ -1,4 +1,11 @@
 submission_script_1.sh
 
+without mips
+without dust, AGN and emission lines
 
+submission_script_1.sh
+
+without mips
+with emission lines
+without dust and AGN
 
