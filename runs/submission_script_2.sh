@@ -13,19 +13,19 @@
 ### Job name
 #SBATCH -J 'halo7d_simple'
 ### output and error logs
-#SBATCH -o halo7d_simple_we_%a.out
-#SBATCH -e halo7d_simple_we_%a.err
+#SBATCH -o halo7d_simple_mips_%a.out
+#SBATCH -e halo7d_simple_mips_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
 source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_parametric.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
---outfile="parametric_simple_we_" \
+--outfile="parametric_simple_mips" \
 --err_floor=0.1 \
---remove_mips24 \
 --fit_continuum \
---add_neb \
+--add_duste \
+--add_agn \
 --dynesty \
 --nested_method="rwalk" \
 --nlive_batch=200 \

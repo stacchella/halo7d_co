@@ -99,7 +99,13 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['wavelength'] = catalog[idx_cat]['LAM'].data
     obs['spectrum'] = catalog[idx_cat]['FLUX'].data * conversion_factor
     obs['unc'] = np.clip(catalog[idx_cat]['ERR'].data * conversion_factor, catalog[idx_cat]['FLUX'].data * conversion_factor * err_floor, np.inf)
-    obs['mask'] = (catalog[idx_cat]['ERR'].data < 6000.0) & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3550) & ~((catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3702) & (catalog[idx_cat]['LAM'].data < (1.0 + catalog[idx_cat]['ZSPEC']) * 3752)) & ~((catalog[idx_cat]['LAM'].data > 6860) & (catalog[idx_cat]['LAM'].data < 6920)) & ~((catalog[idx_cat]['LAM'].data > 7150) & (catalog[idx_cat]['LAM'].data < 7340)) & ~((catalog[idx_cat]['LAM'].data > 7575) & (catalog[objid]['LAM'].data < 7725))
+    # mask emission lines
+    dA_line = 2.0  # in Angstrom
+    rest_waves = np.array([4862.69, 4341.69, 4102.92, 3971.19, 3890.15, 3836.48, 3798.98, 3869.81, 3727.09, 3729.88, 5008.24, 4960.30])
+    mask = np.ones(len(catalog[idx_cat]['LAM']), dtype=bool)
+    for ii_line in rest_waves:
+        mask = mask & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * ii_line + dA_line) & (catalog[idx_cat]['LAM'].data < (1.0 + catalog[idx_cat]['ZSPEC']) * ii_line - dA_line)
+    obs['mask'] = (catalog[idx_cat]['ERR'].data < 6000.0) & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3550)
     # Add unessential bonus info.  This will be stored in output
     #obs['dmod'] = catalog[ind]['dmod']
     obs['cat_row'] = idx_cat

@@ -21,7 +21,7 @@
 source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_parametric.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
---outfile="parametric_simple_" \
+--outfile="parametric_simple" \
 --err_floor=0.1 \
 --remove_mips24 \
 --fit_continuum \
