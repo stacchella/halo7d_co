@@ -54,7 +54,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     mags_err = []
     # field name
     field_name_filters = catalog[idx_cat]['FIELD'].lower().replace("-", "")
-    if (field_name_filters == 'egs'):
+    if ((field_name_filters == 'egs') | (field_name_filters == 'egs+')):
         field_name_filters = 'aegis'
     for ii in catalog.keys():
         if ('f_' in ii[:2]):
