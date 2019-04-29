@@ -90,10 +90,14 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     # Here we mask out any NaNs or infs
     obs['phot_mask'] = np.isfinite(np.squeeze(mags)) & (mags != mags_err) & (mags != -99.0) & (mags_err > 0)
     # We have a spectrum (should be units of maggies). wavelength in AA
-    if np.isnan(catalog[idx_cat]['f_F814W']):
-        mag_norm = catalog[idx_cat]['f_F775W'] * 1e-10
-    else:
+    if np.isfinite(catalog[idx_cat]['f_F814W']) & (catalog[idx_cat]['f_F814W'] > 0.0):
         mag_norm = catalog[idx_cat]['f_F814W'] * 1e-10
+    elif np.isfinite(catalog[idx_cat]['f_F775W']) & (catalog[idx_cat]['f_F775W'] > 0.0):
+        mag_norm = catalog[idx_cat]['f_F775W'] * 1e-10
+    elif np.isfinite(catalog[idx_cat]['f_I']) & (catalog[idx_cat]['f_I'] > 0.0):
+        mag_norm = catalog[idx_cat]['f_I'] * 1e-10
+    else:
+        mag_norm = 20.0 * 1e-10
     idx_w = (catalog[idx_cat]['LAM'] > 8040) & (catalog[idx_cat]['LAM'] < 8240) & (catalog[idx_cat]['ERR'] < 6000.0)
     conversion_factor = mag_norm/np.median(catalog[idx_cat]['FLUX'][idx_w].data)
     obs['wavelength'] = catalog[idx_cat]['LAM'].data
