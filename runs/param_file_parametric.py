@@ -72,7 +72,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
         mags = mags[choice_non_mips]
         mags_err = mags_err[choice_non_mips]
     # ensure filters available
-    choice_finite = np.isfinite(np.squeeze(mags)) & (mags != -99.0)
+    choice_finite = np.isfinite(np.squeeze(mags)) & (mags != -99.0) & (mags_err > 0.0)
     filternames = filternames[choice_finite]
     mags = mags[choice_finite]
     mags_err = mags_err[choice_finite]
