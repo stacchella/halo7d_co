@@ -13,8 +13,8 @@
 ### Job name
 #SBATCH -J 'halo7d_simple'
 ### output and error logs
-#SBATCH -o halo7d_simple%a.out
-#SBATCH -e halo7d_simple%a.err
+#SBATCH -o simple_%a.out
+#SBATCH -e simple_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
