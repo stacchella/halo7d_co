@@ -104,7 +104,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['spectrum'] = catalog[idx_cat]['FLUX'].data * conversion_factor
     obs['unc'] = np.clip(catalog[idx_cat]['ERR'].data * conversion_factor, catalog[idx_cat]['FLUX'].data * conversion_factor * err_floor, np.inf)
     # mask emission lines
-    dA_line = 3.0  # in Angstrom
+    dA_line = 5.0  # in Angstrom
     rest_waves = np.array([4862.69, 4341.69, 4102.92, 3971.19, 3890.15, 3836.48, 3798.98, 3869.81, 3727.09, 3729.88, 5008.24, 4960.30])
     mask = np.ones(len(catalog[idx_cat]['LAM']), dtype=bool)
     for ii_line in rest_waves:
