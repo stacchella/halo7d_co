@@ -104,7 +104,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['spectrum'] = catalog[idx_cat]['FLUX'].data * conversion_factor
     obs['unc'] = np.clip(catalog[idx_cat]['ERR'].data * conversion_factor, catalog[idx_cat]['FLUX'].data * conversion_factor * err_floor, np.inf)
     # mask emission lines
-    dA_line = 2.0  # in Angstrom
+    dA_line = 3.0  # in Angstrom
     rest_waves = np.array([4862.69, 4341.69, 4102.92, 3971.19, 3890.15, 3836.48, 3798.98, 3869.81, 3727.09, 3729.88, 5008.24, 4960.30])
     mask = np.ones(len(catalog[idx_cat]['LAM']), dtype=bool)
     for ii_line in rest_waves:
@@ -115,6 +115,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['cat_row'] = idx_cat
     obs['id_halo7d'] = catalog[idx_cat]['ID']
     obs['id_3dhst'] = catalog[idx_cat]['id_3dhst']
+    obs['field'] = catalog[idx_cat]['FIELD']
     obs['RA'] = catalog[idx_cat]['RA']
     obs['DEC'] = catalog[idx_cat]['DEC']
     obs['redshift'] = catalog[idx_cat]['ZSPEC']
@@ -141,6 +142,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
     from prospect.models import priors, sedmodel
     #from prospect.models import transforms
     from astropy.table import Table
+    from astropy.cosmology import Planck15 as cosmo
     # read in data table
     catalog = Table.read(data_table)
     idx_cat = objid-1
@@ -157,6 +159,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
     # adjust priors
     model_params["dust2"]["prior"] = priors.TopHat(mini=0.0, maxi=2.0)
     model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
+    model_params["tage"]["prior"] = priors.LogUniform(mini=0.0, maxi=cosmo.age(catalog[idx_cat]['ZSPEC']).value)
     model_params["mass"]["prior"] = priors.LogUniform(mini=1e10, maxi=1e12)
     model_params["logzsol"]["prior"] = priors.TopHat(mini=-1.0, maxi=0.2)
 

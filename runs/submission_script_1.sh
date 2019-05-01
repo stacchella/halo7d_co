@@ -22,12 +22,12 @@ source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_parametric.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
 --outfile="parametric_simple" \
---err_floor=0.1 \
+--err_floor=0.05 \
 --remove_mips24 \
 --fit_continuum \
 --dynesty \
 --nested_method="rwalk" \
 --nlive_batch=200 \
 --nlive_init=200 \
---nested_dlogz_init=0.5 \
---nested_maxcall=2000 
+--nested_dlogz_init=0.1 \
+--nested_maxcall=10000 
