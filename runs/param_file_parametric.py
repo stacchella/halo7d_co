@@ -159,7 +159,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
     # adjust priors
     model_params["dust2"]["prior"] = priors.TopHat(mini=0.0, maxi=2.0)
     model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
-    model_params["tage"]["prior"] = priors.LogUniform(mini=0.0, maxi=cosmo.age(catalog[idx_cat]['ZSPEC']).value)
+    model_params["tage"]["prior"] = priors.TopHat(mini=0.0, maxi=cosmo.age(catalog[idx_cat]['ZSPEC']).value)
     model_params["mass"]["prior"] = priors.LogUniform(mini=1e10, maxi=1e12)
     model_params["logzsol"]["prior"] = priors.TopHat(mini=-1.0, maxi=0.2)
 
