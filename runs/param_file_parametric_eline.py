@@ -1,6 +1,5 @@
 # import modules
 
-import time
 import sys
 import os
 
@@ -21,8 +20,10 @@ filter_folder = path_wdir + '/data/filters/'
 
 
 def get_lines_to_fit(wave_min, wave_max, redshift):
-    line_fit_name = np.array(['Halpha', 'Hbeta', 'Hgamma', 'Hdelta', 'H8', 'H9', 'H10', '[NII]', '[NII]', '[OII]', '[OII]', '[OIII]', '[OIII]'])
-    line_fit_rest_wave = np.array([6564.61, 4862.69, 4341.69, 4102.92, 3890.15, 3836.48, 3798.98, 6549.9, 6585.3, 3727.09, 3729.88, 5008.24, 4960.30])
+    #line_fit_name = np.array(['Halpha', 'Hbeta', 'Hgamma', 'Hdelta', 'H8', 'H9', 'H10', '[NII]', '[NII]', '[OII]', '[OII]', '[OIII]', '[OIII]'])
+    #line_fit_rest_wave = np.array([6564.61, 4862.69, 4341.69, 4102.92, 3890.15, 3836.48, 3798.98, 6549.9, 6585.3, 3727.09, 3729.88, 5008.24, 4960.30])
+    line_fit_name = np.array(['Halpha', 'Hbeta', 'Hgamma', 'Hdelta', '[NII]', '[NII]', '[OII]', '[OII]', '[OIII]', '[OIII]'])
+    line_fit_rest_wave = np.array([6564.61, 4862.69, 4341.69, 4102.92, 6585.27, 6549.86, 3727.09, 3729.88, 5008.24, 4960.30])
     idx_line = (wave_min < (redshift+1.0)*line_fit_rest_wave) & (wave_max > (redshift+1.0)*line_fit_rest_wave)
     return(line_fit_name[idx_line], line_fit_rest_wave[idx_line])
 
@@ -162,7 +163,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
 # Model Definition
 # --------------
 
-from prospect.models.sedmodel import PolySedModel, gauss, log
+from prospect.models.sedmodel import PolySedModel, gauss
 
 
 class ElineSEDModel(PolySedModel):
@@ -172,8 +173,8 @@ class ElineSEDModel(PolySedModel):
         eline_luminosity = 10**self.params['eline_luminosity']  # hack to convert to flux
         eline_wavelength = self.params['eline_wavelength'] * (1.0 + self.params['zred'])
         eline_sigma = self.params['eline_sigma']
-        x = log(wave)
-        mu = log(eline_wavelength)
+        x = np.log(wave)
+        mu = np.log(eline_wavelength)
         sigma = eline_sigma/2.998e5
         # line luminosity wrong by (1+z)?
         elines = gauss(x, mu, eline_luminosity / eline_wavelength, sigma)
