@@ -17,8 +17,8 @@ from prospect.io import write_results as writer
 path_wdir = os.environ['WDIR_halo7d']
 filter_folder = path_wdir + '/data/filters/'
 
+# define helper functions
 
-# define functions
 
 def get_lines_to_fit(wave_min, wave_max, redshift):
     line_fit_name = np.array(['Halpha', 'Hbeta', 'Hgamma', 'Hdelta', 'H8', 'H9', 'H10', '[NII]', '[NII]', '[OII]', '[OII]', '[OIII]', '[OIII]'])
@@ -112,12 +112,6 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['wavelength'] = catalog[idx_cat]['LAM'].data
     obs['spectrum'] = catalog[idx_cat]['FLUX'].data * conversion_factor
     obs['unc'] = np.clip(catalog[idx_cat]['ERR'].data * conversion_factor, catalog[idx_cat]['FLUX'].data * conversion_factor * err_floor, np.inf)
-    # mask emission lines
-    dA_line = 5.0  # in Angstrom
-    rest_waves = np.array([4862.69, 4341.69, 4102.92, 3971.19, 3890.15, 3836.48, 3798.98, 3869.81, 3727.09, 3729.88, 5008.24, 4960.30])
-    mask = np.ones(len(catalog[idx_cat]['LAM']), dtype=bool)
-    for ii_line in rest_waves:
-        mask = mask & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * ii_line + dA_line) & (catalog[idx_cat]['LAM'].data < (1.0 + catalog[idx_cat]['ZSPEC']) * ii_line - dA_line)
     obs['mask'] = (catalog[idx_cat]['ERR'].data < 6000.0) & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3550)
     # check S2N cut
     idx_w = (obs['wavelength'] > 7000.0) & (obs['wavelength'] < 9500.0)
@@ -155,12 +149,36 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['DEC'] = catalog[idx_cat]['DEC']
     obs['redshift'] = catalog[idx_cat]['ZSPEC']
     obs['SN_calc'] = SN_calc
+    # get EL that will be fit
+    mask = (catalog[idx_cat]['ERR'].data < 6000.0) & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3550)
+    wave = catalog[idx_cat]['LAM'].data
+    line_names, line_wave = get_lines_to_fit(np.min(wave[mask]), np.max(wave[mask]), catalog[idx_cat]['ZSPEC'])
+    obs['EL_names'] = line_names
+    obs['EL_wave'] = line_wave
     return obs
 
 
 # --------------
 # Model Definition
 # --------------
+
+from prospect.models.sedmodel import PolySedModel, gauss, log
+
+
+class ElineSEDModel(PolySedModel):
+
+    def sky(self, obs):
+        wave = obs['wavelength']
+        eline_luminosity = 10**self.params['eline_luminosity']  # hack to convert to flux
+        eline_wavelength = self.params['eline_wavelength'] * (1.0 + self.params['zred'])
+        eline_sigma = self.params['eline_sigma']
+        x = log(wave)
+        mu = log(eline_wavelength)
+        sigma = eline_sigma/2.998e5
+        # line luminosity wrong by (1+z)?
+        elines = gauss(x, mu, eline_luminosity / eline_wavelength, sigma)
+        return(elines)
+
 
 def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', add_duste=False, add_neb=False, add_agn=False, fit_continuum=False, **extras):
     """Construct a model.  This method defines a number of parameter
@@ -175,7 +193,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
         turn nebular emission on.
     """
     from prospect.models.templates import TemplateLibrary
-    from prospect.models import priors, sedmodel
+    from prospect.models import priors
     #from prospect.models import transforms
     from astropy.table import Table
     from astropy.cosmology import Planck15 as cosmo
@@ -193,11 +211,11 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
     model_params = TemplateLibrary["parametric_sfh"]
 
     # adjust priors
-    model_params["dust2"]["prior"] = priors.TopHat(mini=0.0, maxi=2.0)
+    model_params["dust2"]["prior"] = priors.TopHat(mini=0.0, maxi=3.0)
     model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
     model_params["tage"]["prior"] = priors.TopHat(mini=0.0, maxi=cosmo.age(catalog[idx_cat]['ZSPEC']).value)
     model_params["mass"]["prior"] = priors.LogUniform(mini=1e10, maxi=1e12)
-    model_params["logzsol"]["prior"] = priors.TopHat(mini=-1.0, maxi=0.35)
+    model_params["logzsol"]["prior"] = priors.TopHat(mini=-1.0, maxi=0.4)
     # model_params["dust_index"] = {"N": 1, "isfree": True,
     #                               "init": 0.0, "units": "power-law multiplication of Calzetti",
     #                               "prior": priors.TopHat(mini=-2.0, maxi=0.5)}
@@ -249,8 +267,32 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
                                      'prior': priors.Normal(sigma=0.5, mean=1.0),
                                      'units': 'f_true/f_obs'}
 
+    # list of all emission lines
+    #rest_waves = np.array([4862.69, 4341.69, 4102.92, 3971.19, 3890.15, 3836.48, 3798.98, 3869.81, 3727.09, 3729.88, 5008.24, 4960.30])
+    mask = (catalog[idx_cat]['ERR'].data < 6000.0) & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3550)
+    wave = catalog[idx_cat]['LAM'].data
+    line_names, rest_waves = get_lines_to_fit(np.min(wave[mask]), np.max(wave[mask]), catalog[idx_cat]['ZSPEC'])
+
+    #rest_waves = np.array([3727.09, 3729.88])
+    # choose EL that are in wavelength range => add to obs
+
+    nlines = len(rest_waves)
+    model_params['eline_wavelength'] = {'N': nlines,
+                                        'init': np.array(rest_waves),
+                                        'isfree': False}
+    model_params['eline_luminosity'] = {'N': nlines,
+                                        'init': -8.0*np.ones(nlines),
+                                        'isfree': True,
+                                        'prior': priors.TopHat(mini=-10.0*np.ones(nlines), maxi=-5.0*np.ones(nlines))}
+
+    model_params['eline_sigma'] = {'N': 1,
+                                   'init': 50.0,
+                                   'isfree': True,
+                                   'prior': priors.TopHat(mini=0.0, maxi=300.0)}
+
     # Now instantiate the model using this new dictionary of parameter specifications
-    model = sedmodel.PolySedModel(model_params)
+    #model = sedmodel.PolySedModel(model_params)
+    model = ElineSEDModel(model_params)
 
     return model
 
@@ -303,6 +345,10 @@ if __name__=='__main__':
                         help="Zero-index row number in the table to fit.")
     parser.add_argument('--err_floor', type=np.float, default=0.05,
                         help="Error floor for photometry and spectroscopy.")
+    parser.add_argument('--S2N_cut', type=np.float, default=5.0,
+                        help="Signal-to-noise cut applied to sample.")
+
+
 
     args = parser.parse_args()
     run_params = vars(args)
