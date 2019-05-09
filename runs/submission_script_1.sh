@@ -21,7 +21,7 @@
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
 source activate pro
-srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_parametric.py \
+srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_parametric_eline.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
 --outfile="parametric_withEL_full" \
 --err_floor=0.05 \
