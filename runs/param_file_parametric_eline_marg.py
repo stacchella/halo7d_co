@@ -182,7 +182,7 @@ class ElineMargSEDModel(PolySedModel):
     def get_el(self, obs, EL_info):
         mask = obs.get('mask', slice(None))
         residual_spec = obs['spectrum']-self._spec
-        eline_wavelength = np.log(self.params['eline_wavelength'] * (1.0 + self.params['zred_gas']))
+        eline_wavelength = np.log(self.params['eline_wavelength'] * (1.0 + self.params['zred']))
 
         def gaussian_wrap(x, *vec):
             return(gauss(x, eline_wavelength, vec[1:], vec[0]))
@@ -240,9 +240,9 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
     model_params["zred"]['isfree'] = True
     model_params["zred"]["init"] = catalog[idx_cat]['ZSPEC']
     model_params["zred"]["prior"] = priors.TopHat(mini=catalog[idx_cat]['ZSPEC']-0.005, maxi=catalog[idx_cat]['ZSPEC']+0.005)
-    model_params["zred_gas"] = {"N": 1, "isfree": True,
-                                "init": catalog[idx_cat]['ZSPEC'], "units": "redshift of gas",
-                                "prior": priors.TopHat(mini=catalog[idx_cat]['ZSPEC']-0.005, maxi=catalog[idx_cat]['ZSPEC']+0.005)}
+    #model_params["zred_gas"] = {"N": 1, "isfree": True,
+    #                            "init": catalog[idx_cat]['ZSPEC'], "units": "redshift of gas",
+    #                            "prior": priors.TopHat(mini=catalog[idx_cat]['ZSPEC']-0.005, maxi=catalog[idx_cat]['ZSPEC']+0.005)}
 
     # velocity dispersion
     model_params.update(TemplateLibrary['spectral_smoothing'])
