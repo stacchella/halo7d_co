@@ -253,21 +253,21 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
     if add_duste:
         # Add dust emission (with fixed dust SED parameters)
         model_params.update(TemplateLibrary["dust_emission"])
-        model_params['duste_gamma']['isfree'] = True
-        model_params['duste_gamma']['init'] = 1e-2
-        model_params['duste_gamma']['prior'] = priors.LogUniform(mini=1e-3, maxi=1e-1)
+        model_params['duste_gamma']['isfree'] = False
+        #model_params['duste_gamma']['init'] = 1e-2
+        #model_params['duste_gamma']['prior'] = priors.LogUniform(mini=1e-3, maxi=1e-1)
         model_params['duste_qpah']['isfree'] = True
         model_params['duste_qpah']['prior'] = priors.TopHat(mini=0.5, maxi=7.0)
-        model_params['duste_umin']['isfree'] = True
-        model_params['duste_umin']['prior'] = priors.ClippedNormal(mean=1.0, sigma=0.5, mini=0.1, maxi=25)
+        model_params['duste_umin']['isfree'] = False
+        #model_params['duste_umin']['prior'] = priors.ClippedNormal(mean=1.0, sigma=0.5, mini=0.1, maxi=25)
 
     if add_agn:
         # Add dust emission (with fixed dust SED parameters)
         model_params.update(TemplateLibrary["agn"])
         model_params['fagn']['isfree'] = True
         model_params['fagn']['prior'] = priors.LogUniform(mini=1e-5, maxi=3.0)
-        model_params['agn_tau']['isfree'] = True
-        model_params['agn_tau']['prior'] = priors.LogUniform(mini=5.0, maxi=150.)
+        model_params['agn_tau']['isfree'] = False
+        #model_params['agn_tau']['prior'] = priors.LogUniform(mini=5.0, maxi=150.)
 
     if add_neb:
         # Add nebular emission (with fixed parameters)
