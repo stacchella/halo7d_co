@@ -224,7 +224,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
     # See the python-FSPS documentation for details about most of these
     # parameters.  Also, look at `TemplateLibrary.describe("parametric_sfh")` to
     # view the parameters, their initial values, and the priors in detail.
-    model_params = TemplateLibrary["parametric_sfh"]
+    model_params = TemplateLibrary["continuity_sfh"]
 
     # adjust priors
     model_params["dust2"]["prior"] = priors.TopHat(mini=0.0, maxi=3.0)
