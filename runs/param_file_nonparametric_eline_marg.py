@@ -266,7 +266,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
         model_params.update(TemplateLibrary["agn"])
         model_params['fagn']['isfree'] = True
         model_params['fagn']['prior'] = priors.LogNormal(mode=np.log(1e-4), sigma=0.3)
-	#model_params['fagn']['prior'] = priors.LogUniform(mini=1e-5, maxi=3.0)
+        #model_params['fagn']['prior'] = priors.LogUniform(mini=1e-5, maxi=3.0)
         model_params['agn_tau']['isfree'] = False
         #model_params['agn_tau']['prior'] = priors.LogUniform(mini=5.0, maxi=150.)
 
@@ -319,8 +319,8 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
 # --------------
 
 def build_sps(zcontinuous=1, compute_vega_mags=False, **extras):
-    from prospect.sources import CSPSpecBasis
-    sps = CSPSpecBasis(zcontinuous=zcontinuous,
+    from prospect.sources import FastStepBasis
+    sps = FastStepBasis(zcontinuous=zcontinuous,
                        compute_vega_mags=compute_vega_mags)
     return sps
 
