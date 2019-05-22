@@ -225,10 +225,10 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
     # parameters.  Also, look at `TemplateLibrary.describe("parametric_sfh")` to
     # view the parameters, their initial values, and the priors in detail.
     model_params = TemplateLibrary["continuity_sfh"]
+    model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=7)
 
     # adjust priors
     model_params["dust2"]["prior"] = priors.TopHat(mini=0.0, maxi=3.0)
-    model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=7)
     model_params["mass"]["prior"] = priors.LogUniform(mini=1e10, maxi=1e12)
     model_params["logzsol"]["prior"] = priors.TopHat(mini=-1.0, maxi=0.3)
     model_params["dust_type"]["init"] = 4
