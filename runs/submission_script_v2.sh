@@ -21,7 +21,7 @@
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
 source activate pro
-srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_parametric_eline_marg_v2.py \
+srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_parametric_eline_marg.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
 --outfile="halo7d_v2_parametric" \
 --err_floor_phot=0.05 \

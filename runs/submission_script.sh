@@ -32,8 +32,8 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_parametric_el
 --add_agn \
 --dynesty \
 --nested_method="rwalk" \
---nlive_batch=200 \
---nlive_init=200 \
+--nlive_batch=100 \
+--nlive_init=100 \
 --nested_posterior_thresh=0.05 \
 --nested_dlogz_init=0.05 \
 --nested_maxcall=10000000 
