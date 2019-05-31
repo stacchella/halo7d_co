@@ -21,10 +21,44 @@ filter_folder = path_wdir + '/data/filters/'
 
 # emission line function
 
-def get_lines_to_fit(wave_min, wave_max, redshift):
+def get_boxed_mask(wavelength, mask):
+    mask_val = ~mask
+    mask_vec = []
+    kk = 0
+    for ii in range(len(wavelength)-1):
+        if (ii <= kk+1):
+            continue
+        if mask_val[ii]:
+            for kk in range(ii, len(wavelength)-1):
+                if ~mask_val[kk]:
+                    break
+            mask_vec.append(ii)
+            mask_vec.append(kk)
+    mask_plot = np.array(mask_vec).reshape(len(mask_vec)/2, 2)
+    mask_bool = np.diff(mask_plot, axis=1) > 20.0/np.diff(wavelength)[0]
+    mask_blocks = np.array(len(mask_val)*[True])
+    for ii_c in range(len(mask_bool)-1):
+        if mask_bool[ii_c]:
+            mask_blocks[mask_plot[ii_c][0]:mask_plot[ii_c][1]] = (mask_plot[ii_c][1]-mask_plot[ii_c][0])*[False]
+    return(mask_blocks)
+
+
+def get_lines_to_fit(wavelength, mask, redshift):
     line_fit_name = np.array(['Ha', 'Hb', 'Hg', 'Hd', 'He', 'H8', 'H9', 'H10', 'HeI', '[NII]', '[NII]', '[OII]', '[OII]', '[OIII]', '[OIII]', '[NeIII]'])
     line_fit_rest_wave = np.array([6564.61, 4862.69, 4341.69, 4102.92, 3971.19, 3890.15, 3836.48, 3798.98, 3889.0, 6585.27, 6549.86, 3727.09, 3729.88, 5008.24, 4960.30, 3869.81])
-    idx_line = (wave_min < (redshift+1.0)*line_fit_rest_wave) & (wave_max > (redshift+1.0)*line_fit_rest_wave)
+    # get lines in wavelength range
+    idx_line1 = (np.min(wavelength[mask]) < (redshift+1.0)*line_fit_rest_wave) & (np.max(wavelength[mask]) > (redshift+1.0)*line_fit_rest_wave)
+    # mask lines in masked region
+    mask_new = get_boxed_mask(wavelength, mask)
+    idx_line2 = []
+    for ii_line in range(len(line_fit_rest_wave)):
+        diff = np.abs(wavelength-(redshift+1.0)*line_fit_rest_wave[ii_line])
+        idx_close = diff.argmin()
+        if (diff[idx_close] <= np.diff(wavelength)[0]):
+            idx_line2 = np.append(idx_line2, mask_new[idx_close])
+        else:
+            idx_line2 = np.append(idx_line2, False)
+    idx_line = idx_line1 & (idx_line2 == 1.0)
     return(line_fit_name[idx_line], line_fit_rest_wave[idx_line])
 
 
@@ -162,7 +196,7 @@ class ElineMargSEDModel(PolySedModel):
         self._speccal = self.spec_calibration(obs=obs, **extras)
         s *= self._speccal
         if obs['spectrum'] is not None:
-            self._el = self.get_el(obs, EL_info=EL_info)
+            self._el = self.get_el(obs, s, EL_info=EL_info)
             s += self._el
         if obs.get('logify_spectrum', False):
             return np.log(s), p, x
@@ -173,26 +207,30 @@ class ElineMargSEDModel(PolySedModel):
         s, p, x = self.sed(theta, obs, sps=sps, **extras)
         self._speccal = self.spec_calibration(obs=obs, **extras)
         s *= self._speccal
-        self._el, popt_EL, pcov_EL = self.get_el(obs, EL_info=EL_info)
+        self._el, popt_EL, pcov_EL = self.get_el(obs, s, EL_info=EL_info)
         if obs.get('logify_spectrum', False):
             return np.log(s), p, x, popt_EL, pcov_EL
         else:
             return s, p, x, self._el, popt_EL, pcov_EL
 
-    def get_el(self, obs, EL_info):
+    def get_el(self, obs, spec, EL_info):
         mask = obs.get('mask', slice(None))
-        residual_spec = obs['spectrum']-self._spec
+        residual_spec = obs['spectrum']-spec  # self._spec
+        residual_spec *= 1e10
         eline_wavelength = np.log(self.params['eline_wavelength'] * (1.0 + self.params['zred']))
 
         def gaussian_wrap(x, *vec):
             return(gauss(x, eline_wavelength, vec[1:], vec[0]))
 
-        popt_gauss, pcov_gauss = optimize.curve_fit(gaussian_wrap, np.log(obs["wavelength"][mask]), residual_spec[mask], sigma=obs["unc"][mask], p0=np.append(100.0/2.998e5, np.median(np.abs(residual_spec[mask]))*np.ones(len(self.params['eline_wavelength']))), ftol=1e-2, xtol=1e-2, maxfev=int(1e5))
+        popt_gauss, pcov_gauss = optimize.curve_fit(gaussian_wrap, np.log(obs["wavelength"][mask]), residual_spec[mask], sigma=obs["unc"][mask],
+                                                    p0=np.append(100.0/2.998e5, 0.01*np.ones(len(self.params['eline_wavelength']))),
+                                                    bounds=(np.append(0.0, len(self.params['eline_wavelength'])*[0.0]).tolist(), np.append(350.0/2.998e5, len(self.params['eline_wavelength'])*[1.0]).tolist()),
+                                                    ftol=1e-4, xtol=1e-4, maxfev=int(1e5))
 
         if EL_info:
-            return(gaussian_wrap(np.log(obs["wavelength"]), *popt_gauss), popt_gauss, pcov_gauss)
+            return(gaussian_wrap(np.log(obs["wavelength"]), *popt_gauss)*1e-10, popt_gauss, pcov_gauss)
         else:
-            return(gaussian_wrap(np.log(obs["wavelength"]), *popt_gauss))
+            return(gaussian_wrap(np.log(obs["wavelength"]), *popt_gauss)*1e-10)
 
 
 def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', add_duste=False, add_neb=False, add_agn=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, **extras):

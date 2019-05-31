@@ -58,11 +58,7 @@ def get_lines_to_fit(wavelength, mask, redshift):
             idx_line2 = np.append(idx_line2, mask_new[idx_close])
         else:
             idx_line2 = np.append(idx_line2, False)
-    print line_fit_name
-    print idx_line1
-    print idx_line2
     idx_line = idx_line1 & (idx_line2 == 1.0)
-    print idx_line
     return(line_fit_name[idx_line], line_fit_rest_wave[idx_line])
 
 
