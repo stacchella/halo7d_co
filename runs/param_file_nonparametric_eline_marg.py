@@ -172,7 +172,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['SN_calc'] = SN_calc
     # get EL that will be fit
     try:
-        line_names, line_wave = get_lines_to_fit(np.min(obs['wavelength'][obs['mask']]), np.max(obs['wavelength'][obs['mask']]), catalog[idx_cat]['ZSPEC'])
+        line_names, line_wave = get_lines_to_fit(obs['wavelength'], obs['mask'], catalog[idx_cat]['ZSPEC'])
         obs['EL_names'] = line_names
         obs['EL_wave'] = line_wave
     except (ValueError, TypeError):
@@ -338,7 +338,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
     else:
         mask = (catalog[idx_cat]['ERR'].data < 6000.0) & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3550)
         wave = catalog[idx_cat]['LAM'].data
-        line_names, rest_waves = get_lines_to_fit(np.min(wave[mask]), np.max(wave[mask]), catalog[idx_cat]['ZSPEC'])
+        line_names, rest_waves = get_lines_to_fit(wave, mask, catalog[idx_cat]['ZSPEC'])
 
         # choose EL that are in wavelength range => add to obs
         model_params['eline_wavelength'] = {'N': len(rest_waves),
