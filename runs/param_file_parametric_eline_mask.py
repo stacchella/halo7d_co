@@ -180,7 +180,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
         obs['EL_wave'] = []
     # mask EL
     dA = 5.0
-    for ii in len(line_wave):
+    for ii in range(len(line_wave)):
         if (ii == 0):
             EL_region = (catalog[idx_cat]['LAM'].data > (catalog[idx_cat]['ZSPEC']+1.0)*line_wave[ii]-dA) & (catalog[idx_cat]['LAM'].data < (catalog[idx_cat]['ZSPEC']+1.0)*line_wave[ii]+dA)
         else:
