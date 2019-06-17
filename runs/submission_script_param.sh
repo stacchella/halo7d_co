@@ -21,16 +21,18 @@
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
 source activate pro
-srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_parametric_eline_marg_fout.py \
+srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
 --outfile="halo7d_parametric" \
 --err_floor_phot=0.05 \
---err_floor_spec=0.1 \
---f_boost=1000.0 \
+--err_floor_spec=0.05 \
+--f_boost=10.0 \
 --S2N_cut=5.0 \
 --fit_continuum \
 --add_duste \
 --add_agn \
+--add_lsf \
+--add_jitter \
 --dynesty \
 --nested_method="rwalk" \
 --nlive_batch=100 \
