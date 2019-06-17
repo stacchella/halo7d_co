@@ -431,7 +431,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
     model_params['spec_jitter'] = {"N": 1,
                                    "isfree": True,
                                    "init": 1.0,
-                                   "prior": priors.TopHat(mini=1.0, maxi=3.0)}
+                                   "prior": priors.TopHat(mini=1.0, maxi=4.0)}
 
     # Change the model parameter specifications based on some keyword arguments
     if add_duste:

@@ -25,7 +25,7 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_parametric_el
 --objid="${SLURM_ARRAY_TASK_ID}" \
 --outfile="halo7d_parametric_withjitter" \
 --err_floor_phot=0.05 \
---err_floor_spec=0.1 \
+--err_floor_spec=0.05 \
 --f_boost=10.0 \
 --S2N_cut=5.0 \
 --fit_continuum \
