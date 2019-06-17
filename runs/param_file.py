@@ -145,7 +145,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', f_bo
     obs['wavelength'] = catalog[idx_cat]['LAM'].data
     obs['spectrum'] = catalog[idx_cat]['FLUX'].data * conversion_factor
     obs['unc'] = np.clip(catalog[idx_cat]['ERR'].data * conversion_factor, catalog[idx_cat]['FLUX'].data * conversion_factor * err_floor_spec, np.inf)
-    obs['mask'] = (catalog[idx_cat]['ERR'].data < 6000.0) & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3550)
+    obs['mask'] = (obs['wavelength'] < 10000.0) & (catalog[idx_cat]['ERR'].data < 6000.0) & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3525.0) & (catalog[idx_cat]['LAM'].data < (1.0 + catalog[idx_cat]['ZSPEC']) * 7500.0)
     # check S2N cut
     idx_w = (obs['wavelength'] > 7000.0) & (obs['wavelength'] < 9500.0)
     SN_calc = np.mean(catalog[idx_cat]['FLUX'].data[(obs['mask'] == 1) & idx_w]/catalog[idx_cat]['ERR'].data[(obs['mask'] == 1) & idx_w])/np.sqrt(np.mean(np.diff(obs['wavelength'])))
@@ -202,13 +202,6 @@ def lnlike_bad(spec_mu, obs=None, spec_noise=None, **vectors):
 
         delta = (obs['spectrum'] - spec_mu)[mask]
 
-        # if spec_noise is not None:
-        #     try:
-        #         spec_noise.compute(**vectors)
-        #         return spec_noise.lnlikelihood(delta)
-        #     except(LinAlgError):
-        #         return np.nan_to_num(-np.inf)
-        # else:
         # simple noise model
         var = (obs['f_boost']*obs['unc'][mask])**2
         lnp = -0.5*((delta**2/var).sum() + np.log(2*np.pi*var).sum())
@@ -270,7 +263,6 @@ def lnprobfn_mixture(theta, model=None, obs=None, sps=None, noise=(None, None),
     """
     if residuals:
         lnnull = np.zeros(obs["ndof"]) - 1e18  # np.infty
-        #lnnull = -np.infty
     else:
         lnnull = -np.infty
 
@@ -311,8 +303,7 @@ def lnprobfn_mixture(theta, model=None, obs=None, sps=None, noise=(None, None),
     lnp_phot = lnlike_phot(phot, obs=obs,
                            phot_noise=phot_noise, **vectors)
 
-    return lnp_prior + lnp_phot + (1.0-model.params['fout'][0])*lnp_spec + model.params['fout'][0]*lnp_bad
-
+    return lnp_prior + lnp_phot + np.logaddexp(np.log(1.0-model.params['fout'][0]) + lnp_spec, np.log(model.params['fout'][0]) + lnp_bad)
 
 # --------------
 # Model Definition
@@ -368,7 +359,8 @@ class ElineMargSEDModel(PolySedModel):
             return(gaussian_wrap(np.log(obs["wavelength"]), *popt_gauss)*1e-10)
 
 
-def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', add_duste=False, add_neb=False, add_agn=False, add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, **extras):
+def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False,
+                add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, **extras):
     """Construct a model.  This method defines a number of parameter
     specification dictionaries and uses them to initialize a
     `models.sedmodel.SedModel` object.
@@ -380,7 +372,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
         Switch to add (fixed) parameters relevant for nebular emission, and
         turn nebular emission on.
     """
-    from prospect.models.templates import TemplateLibrary
+    from prospect.models.templates import TemplateLibrary, adjust_continuity_agebins
     from prospect.models import priors
     #from prospect.models import transforms
     from astropy.table import Table
@@ -388,17 +380,16 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', ad
     # read in data table
     catalog = Table.read(data_table)
     idx_cat = objid-1
-    # --- Get a basic delay-tau SFH parameter set. ---
-    # This has 5 free parameters:
-    #   "mass", "logzsol", "dust2", "tage", "tau"
-    # And two fixed parameters
-    #   "zred"=0.1, "sfh"=4
-    # See the python-FSPS documentation for details about most of these
-    # parameters.  Also, look at `TemplateLibrary.describe("parametric_sfh")` to
-    # view the parameters, their initial values, and the priors in detail.
-    model_params = TemplateLibrary["parametric_sfh"]
-    model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
-    model_params["tage"]["prior"] = priors.TopHat(mini=0.0, maxi=cosmo.age(catalog[idx_cat]['z']).value)
+
+    # get SFH template
+    if non_param_sfh:
+        t_univ = cosmo.age(catalog[idx_cat]['ZSPEC']).value
+        model_params = TemplateLibrary["continuity_sfh"]
+        model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=7)
+    else:
+        model_params = TemplateLibrary["parametric_sfh"]
+        model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
+        model_params["tage"]["prior"] = priors.TopHat(mini=0.0, maxi=cosmo.age(catalog[idx_cat]['z']).value)
 
     # adjust priors
     model_params["dust2"]["prior"] = priors.TopHat(mini=0.0, maxi=3.0)
@@ -555,10 +546,15 @@ def get_lsf(wave_obs, miles_fwhm_aa=2.54, zred=0.0, **extras):
     return wave_rest[good], dsv[good]
 
 
-def build_sps(zcontinuous=1, add_lsf=False, compute_vega_mags=False, **extras):
-    from prospect.sources import CSPSpecBasis
-    sps = CSPSpecBasis(zcontinuous=zcontinuous,
-                       compute_vega_mags=compute_vega_mags)
+def build_sps(zcontinuous=1, non_param_sfh=False, add_lsf=False, compute_vega_mags=False, **extras):
+    if non_param_sfh:
+        from prospect.sources import FastStepBasis
+        sps = FastStepBasis(zcontinuous=zcontinuous,
+                            compute_vega_mags=compute_vega_mags)
+    else:
+        from prospect.sources import CSPSpecBasis
+        sps = CSPSpecBasis(zcontinuous=zcontinuous,
+                           compute_vega_mags=compute_vega_mags)
 
     if add_lsf:
         set_halo7d_lsf(sps.ssp, **extras)
@@ -594,6 +590,8 @@ if __name__ == '__main__':
     # - Parser with default arguments -
     parser = prospect_args.get_parser()
     # - Add custom arguments -
+    parser.add_argument('--non_param_sfh', action="store_true",
+                        help="If set, fit non-parametric star-formation history model.")
     parser.add_argument('--add_lsf', action="store_true",
                         help="If set, add realistic instrumental dispersion.")
     parser.add_argument('--add_neb', action="store_true",
@@ -618,7 +616,7 @@ if __name__ == '__main__':
                         help="Error floor for spectroscopy.")
     parser.add_argument('--S2N_cut', type=np.float, default=5.0,
                         help="Signal-to-noise cut applied to sample.")
-    parser.add_argument('--add_jitter', action="store_false",
+    parser.add_argument('--add_jitter', action="store_true",
                         help="If set, jitter noise.")
     parser.add_argument('--switch_off_spec', action="store_true",
                         help="If set, remove spectrum from obs.")

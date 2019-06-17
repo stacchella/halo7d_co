@@ -21,18 +21,23 @@
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
 source activate pro
-srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_nonparametric_eline_marg.py \
+srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
---outfile="halo7d_v1_nonparametric" \
+--outfile="halo7d_nonparametric" \
+--non_param_sfh \
 --err_floor_phot=0.05 \
---err_floor_spec=0.1 \
---S2N_cut=10.0 \
+--err_floor_spec=0.05 \
+--f_boost=10.0 \
+--S2N_cut=5.0 \
 --fit_continuum \
 --add_duste \
+--add_agn \
+--add_lsf \
+--add_jitter \
 --dynesty \
 --nested_method="rwalk" \
 --nlive_batch=200 \
 --nlive_init=200 \
---nested_posterior_thresh=0.05 \
---nested_dlogz_init=0.05 \
---nested_maxcall=10000000 
+--nested_posterior_thresh=0.5 \
+--nested_dlogz_init=0.5 \
+--nested_maxcall=3000000 
