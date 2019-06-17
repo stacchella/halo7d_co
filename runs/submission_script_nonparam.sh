@@ -32,7 +32,6 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --fit_continuum \
 --add_duste \
 --add_agn \
---add_lsf \
 --add_jitter \
 --dynesty \
 --nested_method="rwalk" \
