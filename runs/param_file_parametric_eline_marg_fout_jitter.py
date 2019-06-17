@@ -547,7 +547,7 @@ if __name__=='__main__':
                         help="Zero-index row number in the table to fit.")
     parser.add_argument('--f_boost', type=np.float, default=10.0,
                         help="Error boost for outliers.")
-    parser.add_argument('--err_floor_spec', type=np.float, default=0.1,
+    parser.add_argument('--err_floor_phot', type=np.float, default=0.05,
                         help="Error floor for photometry.")
     parser.add_argument('--err_floor_spec', type=np.float, default=0.1,
                         help="Error floor for spectroscopy.")
