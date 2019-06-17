@@ -26,7 +26,7 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_parametric_el
 --outfile="halo7d_parametric" \
 --err_floor_phot=0.05 \
 --err_floor_spec=0.1 \
---f_boost=10.0 \
+--f_boost=1000.0 \
 --S2N_cut=5.0 \
 --fit_continuum \
 --add_duste \
