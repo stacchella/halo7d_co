@@ -97,6 +97,7 @@ for ii in range(len(idx_file_considered)):
     print result_file_list[idx_file_considered[ii]]
     ID, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=False, add_duste=True, add_jitter=True, add_agn=True, fit_continuum=True)
     output['file_name'] = result_file_list[idx_file_considered[ii]].split('/')[-1]
+    output['ID'] = ID
     f = open(path_res + "posterior_draws/" + ID + "_output.pkl", "w")
     hickle.dump(output, f)
     f.close()
