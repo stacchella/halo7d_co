@@ -98,7 +98,10 @@ for ii in range(len(idx_file_considered)):
     ID, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=False, add_duste=True, add_jitter=True, add_agn=True, fit_continuum=True)
     output['file_name'] = result_file_list[idx_file_considered[ii]].split('/')[-1]
     output['ID'] = ID
-    f = open(path_res + "posterior_draws/" + ID + "_output.pkl", "w")
+    file_name = path_res + "posterior_draws/" + ID + "_output.pkl"
+    if os.path.exists(file_name):
+        os.remove(file_name)
+    f = open(file_name, "w")
     hickle.dump(output, f)
     f.close()
 
