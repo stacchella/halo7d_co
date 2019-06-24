@@ -22,7 +22,7 @@
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
 source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/scripts/draw_posterior_output_cluster.py \
---number_of_bins=200 \
+--number_of_bins=150 \
 --idx_file_key="${SLURM_ARRAY_TASK_ID}" \
 --path_results="/n/conroyfs1/stacchella/halo7d_co/results/run_param/" \
---ncalc=10
+--ncalc=1000
