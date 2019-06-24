@@ -1,16 +1,15 @@
 '''
 Sandro Tacchella
-January 2, 2018   : iniate
-run this script after run_make_SFH.py in order to
-combine all (numpy) files to one (hdf5) file.
-
+June 24, 2019   : iniate
+run this script to combine all .pkl files (run on interactive node)
+python summarize_draw_cluster.py
 '''
 
 # import modules
 
 import hickle
 import glob
-import tqdm
+from tqdm import tqdm
 
 
 # define paths
