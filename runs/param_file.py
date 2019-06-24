@@ -17,6 +17,7 @@ from prospect.likelihood.kernels import Uncorrelated
 
 path_wdir = os.environ['WDIR_halo7d']
 filter_folder = path_wdir + '/data/filters/'
+filter_lsf = path_wdir + '/data/galaxy_LSF_output/'
 
 
 # emission line function
@@ -502,17 +503,16 @@ def set_halo7d_lsf(ssp, objid=1, data_table=path_wdir + 'data/halo7d_with_phot.f
     from astropy.table import Table
     catalog = Table.read(data_table)
     # get LSF
-    wave, delta_v = get_lsf(catalog[objid-1]['LAM'].data, zred=zred, **extras)
+    wave, delta_v = get_lsf(catalog[objid-1]['LAM'].data, catalog[objid-1]['FIELD'], zred=zred, **extras)
     assert ssp.libraries[1] == 'miles', "Please change FSPS to the MILES libraries."
     ssp.params['smooth_lsf'] = True
     ssp.set_lsf(wave, delta_v)
 
 
-def get_lsf(wave_obs, miles_fwhm_aa=2.54, zred=0.0, **extras):
+def get_lsf(wave_obs, field, miles_fwhm_aa=2.54, zred=0.0, **extras):
     """This method takes an Halo7d spec and returns the gaussian kernel required
     to convolve the restframe MILES spectra to have the observed frame
     instrumental dispersion.
-
     :returns wave_rest:
         The restframe wavelength. ndarray of shape (nwave,)
     :returns dsv:
@@ -521,28 +521,38 @@ def get_lsf(wave_obs, miles_fwhm_aa=2.54, zred=0.0, **extras):
         `wave_rest`
     """
     lightspeed = 2.998e5  # km/s
-
+    # load LSF
+    if (field == 'COSMOS'):
+        deltaLambPolyVals = np.load(filter_lsf + 'COSMOS.deltaLambdaFit.npy')
+    elif (field == 'EGS'):
+        deltaLambPolyVals = np.load(filter_lsf + 'EGS.deltaLambdaFit.npy')
+    elif (field == 'EGS+'):
+        deltaLambPolyVals = np.load(filter_lsf + 'EGS.deltaLambdaFit.npy')
+    elif (field == 'GOODS-N'):
+        deltaLambPolyVals = np.load(filter_lsf + 'GOODSN.deltaLambdaFit.npy')
+    # keep only the parameter values (drop the uncertainties)
+    deltaLambPolyVals = deltaLambPolyVals[:, 0]
+    deltaLambFunc = np.poly1d(deltaLambPolyVals)  # this is the LSF
+    lsf = deltaLambFunc(wave_obs)  # returns the gaussian width at the values of wavelength
     # This is the instrumental velocity resolution in the observed frame
-    sigma_v = np.log(10) * lightspeed * 1e-4 * 1.2   # spec['wdisp']   # NEED UPDATE
-
+    #sigma_v = np.log(10) * lightspeed * 1e-4 * lsf
+    #sigma_v = (1 + zred) * lightspeed * lsf / wave_obs
+    sigma_v = lightspeed * lsf / wave_obs
     # filter out some places where Halo7d reports zero dispersion
     good = sigma_v > 0
     wave_obs, sigma_v = wave_obs[good], sigma_v[good]
-
     # Get the miles velocity resolution function at the corresponding
     # *rest-frame* wavelength
     wave_rest = wave_obs / (1 + zred)
     sigma_v_miles = lightspeed * miles_fwhm_aa / 2.355 / wave_rest
-
     # Get the quadrature difference
     # (Zero and negative values are skipped by FSPS)
-    dsv = np.sqrt(np.clip(sigma_v**2 - sigma_v_miles**2, 0, np.inf))
+    #dsv = np.sqrt(np.clip(sigma_v**2 - sigma_v_miles**2, 0, np.inf))
+    dsv = sigma_v**2 - sigma_v_miles**2
     # Restrict to regions where MILES is used
     good = (wave_rest > 3525.0) & (wave_rest < 7500)
-
     # return the broadening of the rest-frame library spectra required to match
     # the obserrved frame instrumental lsf
-
     return wave_rest[good], dsv[good]
 
 
