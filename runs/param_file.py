@@ -146,11 +146,11 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['wavelength'] = catalog[idx_cat]['LAM'].data
     obs['spectrum'] = catalog[idx_cat]['FLUX'].data * conversion_factor
     obs['unc'] = np.clip(catalog[idx_cat]['ERR'].data * conversion_factor, catalog[idx_cat]['FLUX'].data * conversion_factor * err_floor_spec, np.inf)
-    obs['mask'] = (obs['wavelength'] < 9150.0) & (catalog[idx_cat]['ERR'].data < 6000.0) & \
+    obs['mask'] = (obs['wavelength'] < 9150.0) & \
                   (obs['wavelength'] > (1.0 + catalog[idx_cat]['ZSPEC']) * 3525.0) & (obs['wavelength'] < (1.0 + catalog[idx_cat]['ZSPEC']) * 7500.0) & \
-                  ~((obs['wavelength'] > 6860.0) & (obs['wavelength'] < 6920.0)) & \
-                  ~((obs['wavelength'] > 7150.0) & (obs['wavelength'] < 7340.0)) & \
-                  ~((obs['wavelength'] > 7575.0) & (obs['wavelength'] < 7725.0))
+                   ~((obs['wavelength'] > 6860.0) & (obs['wavelength'] < 6920.0)) & \
+                   ~((obs['wavelength'] > 7150.0) & (obs['wavelength'] < 7340.0)) & \
+                   ~((obs['wavelength'] > 7575.0) & (obs['wavelength'] < 7725.0))
     # check S2N cut
     idx_w = (obs['wavelength'] > 7000.0) & (obs['wavelength'] < 9200.0)
     SN_calc = np.mean(catalog[idx_cat]['FLUX'].data[(obs['mask'] == 1) & idx_w]/catalog[idx_cat]['ERR'].data[(obs['mask'] == 1) & idx_w])/np.sqrt(np.mean(np.diff(obs['wavelength'])))
