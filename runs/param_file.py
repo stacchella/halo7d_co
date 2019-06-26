@@ -7,7 +7,7 @@ import numpy as np
 from sedpy.observate import load_filters
 
 from prospect import prospect_args
-from prospect.fitting import fit_model
+from prospect.fitting import fit_model, lnprobfn
 from prospect.io import write_results as writer
 from prospect.likelihood import NoiseModel
 from prospect.likelihood.kernels import Uncorrelated
@@ -63,7 +63,7 @@ def get_lines_to_fit(wavelength, mask, redshift):
     return(line_fit_name[idx_line], line_fit_rest_wave[idx_line])
 
 
-def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', f_boost=10.0, err_floor_phot=0.05, err_floor_spec=0.1, S2N_cut=1.0, remove_mips24=False, switch_off_phot=False, switch_off_spec=False, **kwargs):
+def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_floor_phot=0.05, err_floor_spec=0.1, S2N_cut=1.0, remove_mips24=False, switch_off_phot=False, switch_off_spec=False, **kwargs):
     """Load photometry from an ascii file.  Assumes the following columns:
     `objid`, `filterset`, [`mag0`,....,`magN`] where N >= 11.  The User should
     modify this function (including adding keyword arguments) to read in their
@@ -115,7 +115,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', f_bo
         mags = mags[choice_non_mips]
         mags_err = mags_err[choice_non_mips]
     # ensure filters available
-    choice_finite = np.isfinite(np.squeeze(mags)) & (mags != -99.0) & (mags_err > 0.0)
+    choice_finite = np.isfinite(np.squeeze(mags)) & (np.squeeze(mags) != -99.0) & (np.squeeze(mags_err) > 0.0)
     filternames = filternames[choice_finite]
     mags = mags[choice_finite]
     mags_err = mags_err[choice_finite]
@@ -146,9 +146,13 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', f_bo
     obs['wavelength'] = catalog[idx_cat]['LAM'].data
     obs['spectrum'] = catalog[idx_cat]['FLUX'].data * conversion_factor
     obs['unc'] = np.clip(catalog[idx_cat]['ERR'].data * conversion_factor, catalog[idx_cat]['FLUX'].data * conversion_factor * err_floor_spec, np.inf)
-    obs['mask'] = (obs['wavelength'] < 10000.0) & (catalog[idx_cat]['ERR'].data < 6000.0) & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3525.0) & (catalog[idx_cat]['LAM'].data < (1.0 + catalog[idx_cat]['ZSPEC']) * 7500.0)
+    obs['mask'] = (obs['wavelength'] < 9150.0) & \
+                  (obs['wavelength'] > (1.0 + catalog[idx_cat]['ZSPEC']) * 3525.0) & (obs['wavelength'] < (1.0 + catalog[idx_cat]['ZSPEC']) * 7500.0) & \
+                   ~((obs['wavelength'] > 6860.0) & (obs['wavelength'] < 6920.0)) & \
+                   ~((obs['wavelength'] > 7150.0) & (obs['wavelength'] < 7340.0)) & \
+                   ~((obs['wavelength'] > 7575.0) & (obs['wavelength'] < 7725.0))
     # check S2N cut
-    idx_w = (obs['wavelength'] > 7000.0) & (obs['wavelength'] < 9500.0)
+    idx_w = (obs['wavelength'] > 7000.0) & (obs['wavelength'] < 9200.0)
     SN_calc = np.mean(catalog[idx_cat]['FLUX'].data[(obs['mask'] == 1) & idx_w]/catalog[idx_cat]['ERR'].data[(obs['mask'] == 1) & idx_w])/np.sqrt(np.mean(np.diff(obs['wavelength'])))
     if (SN_calc < S2N_cut):
         print 'S/N =', SN_calc
@@ -171,7 +175,6 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', f_bo
     obs['DEC'] = catalog[idx_cat]['DEC']
     obs['redshift'] = catalog[idx_cat]['ZSPEC']
     obs['SN_calc'] = SN_calc
-    obs['f_boost'] = f_boost
     # get EL that will be fit
     try:
         line_names, line_wave = get_lines_to_fit(obs['wavelength'], obs['mask'], catalog[idx_cat]['ZSPEC'])
@@ -182,129 +185,6 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', f_bo
         obs['EL_wave'] = []
     return obs
 
-
-# --------------
-# Likelihood Definition
-# --------------
-
-from prospect.likelihood import lnlike_spec, lnlike_phot, chi_spec, chi_phot
-
-
-def lnlike_bad(spec_mu, obs=None, spec_noise=None, **vectors):
-        """Calculate the likelihood of the spectroscopic data given the
-        spectroscopic model.
-        """
-        if obs['spectrum'] is None:
-            return 0.0
-
-        mask = obs.get('mask', slice(None))
-        vectors['mask'] = mask
-        vectors['wavelength'] = obs['wavelength']
-
-        delta = (obs['spectrum'] - spec_mu)[mask]
-
-        # simple noise model
-        var = (obs['f_boost']*obs['unc'][mask])**2
-        lnp = -0.5*((delta**2/var).sum() + np.log(2*np.pi*var).sum())
-        return lnp
-
-
-def lnprobfn_mixture(theta, model=None, obs=None, sps=None, noise=(None, None),
-                     residuals=False, nested=False, verbose=False):
-    """Given a parameter vector and optionally a dictionary of observational
-    ata and a model object, return the ln of the posterior. This requires that
-    an sps object (and if using spectra and gaussian processes, a GP object) be
-    instantiated.
-
-    :param theta:
-        Input parameter vector, ndarray of shape (ndim,)
-
-    :param model:
-        SedModel model object, with attributes including ``params``, a
-        dictionary of model parameter state.  It must also have
-        :py:method:`prior_product`, and :py:method:`mean_model` methods
-        defined.
-
-    :param obs:
-        A dictionary of observational data.  The keys should be
-          *``wavelength``  (angstroms)
-          *``spectrum``    (maggies)
-          *``unc``         (maggies)
-          *``maggies``     (photometry in maggies)
-          *``maggies_unc`` (photometry uncertainty in maggies)
-          *``filters``     (iterable of :py:class:`sedpy.observate.Filter`)
-          * and optional spectroscopic ``mask`` and ``phot_mask``
-            (same length as `spectrum` and `maggies` respectively,
-             True means use the data points)
-
-    :param sps:
-        A :py:class:`prospect.sources.SSPBasis` object or subclass thereof, or
-        any object with a ``get_spectrum`` method that will take a dictionary
-        of model parameters and return a spectrum, photometry, and ancillary
-        information.
-
-    :param noise: (optional, default: (None, None))
-        A 2-element tuple of :py:class:`prospect.likelihood.NoiseModel` objects.
-
-    :param residuals: (optional, default: False)
-        A switch to allow vectors of :math:`\chi` values to be returned instead
-        of a scalar posterior probability.  This can be useful for
-        least-squares optimization methods. Note that prior probabilities are
-        not included in this calculation.
-
-    :param nested: (optional, default: False)
-        If ``True``, do not add the ln-prior probability to the ln-likelihood
-        when computing the ln-posterior.  For nested sampling algorithms the
-        prior probability is incorporated in the way samples are drawn, so
-        should not be included here.
-
-    :returns lnp:
-        Ln posterior probability, unless `residuals=True` in which case a
-        vector of :math:`\chi` values is returned.
-    """
-    if residuals:
-        lnnull = np.zeros(obs["ndof"]) - 1e18  # np.infty
-    else:
-        lnnull = -np.infty
-
-    # --- Calculate prior probability and exit if not within prior ---
-    lnp_prior = model.prior_product(theta, nested=nested)
-    if not np.isfinite(lnp_prior):
-        return lnnull
-
-    # --- Generate mean model ---
-    try:
-        spec, phot, x = model.mean_model(theta, obs, sps=sps)
-    except(ValueError):
-        return lnnull
-
-    # --- Optionally return chi vectors for least-squares ---
-    # note this does not include priors!
-    if residuals:
-        chispec = chi_spec(spec, obs)
-        chiphot = chi_phot(phot, obs)
-        return np.concatenate([chispec, chiphot])
-
-    #  --- Update Noise Model ---
-    spec_noise, phot_noise = noise
-    vectors = {}  # These should probably be copies....
-    if spec_noise is not None:
-        spec_noise.update(**model.params)
-        vectors.update({'spec': spec, "unc": obs['unc']})
-        vectors.update({'sed': model._spec, 'cal': model._speccal})
-    if phot_noise is not None:
-        phot_noise.update(**model.params)
-        vectors.update({'phot': phot, 'phot_unc': obs['maggies_unc']})
-
-    # --- Calculate likelihoods ---
-    lnp_bad = lnlike_bad(spec, obs=obs,
-                         spec_noise=spec_noise, **vectors)
-    lnp_spec = lnlike_spec(spec, obs=obs,
-                           spec_noise=spec_noise, **vectors)
-    lnp_phot = lnlike_phot(phot, obs=obs,
-                           phot_noise=phot_noise, **vectors)
-
-    return lnp_prior + lnp_phot + np.logaddexp(np.log(1.0-model.params['fout'][0]) + lnp_spec, np.log(model.params['fout'][0]) + lnp_bad)
 
 # --------------
 # Model Definition
@@ -415,9 +295,14 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     model_params["sigma_smooth"]["init"] = 200.0
 
     # modeling noise
-    model_params["fout"] = {"N": 1, "isfree": True,
-                            "init": 0.1, "units": "fraction of outliers",
-                            "prior": priors.TopHat(mini=0.0, maxi=1.0)}
+    model_params['f_outlier_spec'] = {"N": 1,
+                                      "isfree": True,
+                                      "init": 0.01,
+                                      "prior": priors.TopHat(mini=1e-5, maxi=0.5)}
+
+    model_params['nsigma_outlier_spec'] = {"N": 1,
+                                           "isfree": False,
+                                           "init": 50.0}
 
     # noise jitter
     if add_jitter:
@@ -618,8 +503,6 @@ if __name__ == '__main__':
                         help="Names of table from which to get photometry.")
     parser.add_argument('--objid', type=int, default=0,
                         help="Zero-index row number in the table to fit.")
-    parser.add_argument('--f_boost', type=np.float, default=10.0,
-                        help="Error boost for outliers.")
     parser.add_argument('--err_floor_phot', type=np.float, default=0.05,
                         help="Error floor for photometry.")
     parser.add_argument('--err_floor_spec', type=np.float, default=0.1,
@@ -645,7 +528,7 @@ if __name__ == '__main__':
 
     #hfile = setup_h5(model=model, obs=obs, **run_params)
     hfile = path_wdir + "results/{0}_idx_{1}_mcmc.h5".format(args.outfile, int(args.objid)-1)
-    output = fit_model(obs, model, sps, noise, lnprobfn=lnprobfn_mixture, **run_params)
+    output = fit_model(obs, model, sps, noise, lnprobfn=lnprobfn, **run_params)
 
     writer.write_hdf5(hfile, run_params, model, obs,
                       output["sampling"][0], output["optimization"][0],
