@@ -24,5 +24,5 @@ source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/scripts/draw_posterior_output_cluster.py \
 --number_of_bins=150 \
 --idx_file_key="${SLURM_ARRAY_TASK_ID}" \
---path_results="/n/conroyfs1/stacchella/halo7d_co/results/run_param/" \
+--path_results="/n/conroyfs1/stacchella/halo7d_co/results/run_param_v2/" \
 --ncalc=1000
