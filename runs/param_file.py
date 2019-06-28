@@ -302,7 +302,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
 
     model_params['nsigma_outlier_spec'] = {"N": 1,
                                            "isfree": False,
-                                           "init": 50.0}
+                                           "init": 5.0}
 
     # noise jitter
     if add_jitter:
