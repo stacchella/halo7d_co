@@ -15,6 +15,7 @@ from tqdm import tqdm
 # define paths
 
 path_results = '/n/conroyfs1/stacchella/halo7d_co/results/run_param_v2/posterior_draws/'
+name_output_file = 'summary_param_run.pkl'
 
 result_file_list = glob.glob(path_results + '*_output.pkl')
 
@@ -31,7 +32,7 @@ for ii_f in tqdm(range(len(result_file_list))):
 # save output
 print 'writing summary file...'
 
-f = open(path_results + "summary_param_run.pkl", "w")
+f = open(path_results + name_output_file, "w")
 hickle.dump(output_condensed, f)
 f.close()
 

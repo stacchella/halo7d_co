@@ -25,9 +25,9 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/scripts/draw_posterior_output
 --number_of_bins=150 \
 --idx_file_key="${SLURM_ARRAY_TASK_ID}" \
 --path_results="/n/conroyfs1/stacchella/halo7d_co/results/TBD/" \
---ncalc=1000
---non_param_sfh
---add_jitter
---fit_continuum
---add_duste
+--ncalc=1000 \
+--non_param_sfh \
+--add_jitter \
+--fit_continuum \
+--add_duste \
 --add_agn
