@@ -39,13 +39,22 @@ parser.add_argument("--number_of_bins", type=int, help="number of cores")
 parser.add_argument("--idx_file_key", type=int, help="iteration variable")
 parser.add_argument("--path_results", type=str, help="path results")
 parser.add_argument("--ncalc", type=int, help="number of samples to draw from posterior")
+parser.add_argument('--non_param_sfh', action="store_true",
+                    help="If set, fit non-parametric star-formation history model.")
+parser.add_argument('--add_jitter', action="store_true",
+                    help="If set, jitter noise.")
+parser.add_argument('--fit_continuum', action="store_true",
+                    help="If set, fit continuum.")
+parser.add_argument('--add_duste', action="store_true",
+                    help="If set, add dust emission to the model.")
+parser.add_argument('--add_agn', action="store_true",
+                    help="If set, add agn emission to the model.")
 args = parser.parse_args()
 
 
 run_params = {'number_of_bins': args.number_of_bins,  # this gives number of cores we run on
               'idx_file_key': args.idx_file_key,  # iteration variable
               }
-
 
 path_res = args.path_results
 ncalc = args.ncalc
@@ -93,9 +102,10 @@ idx_file_considered = get_file_ids(**run_params)
 
 print idx_file_considered
 
+
 for ii in range(len(idx_file_considered)):
     print result_file_list[idx_file_considered[ii]]
-    ID, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=False, add_duste=True, add_jitter=True, add_agn=True, fit_continuum=True)
+    ID, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=args.non_param_sfh, add_duste=args.add_duste, add_jitter=args.add_jitter, add_agn=args.add_agn, fit_continuum=args.fit_continuum)
     output['file_name'] = result_file_list[idx_file_considered[ii]].split('/')[-1]
     output['ID'] = ID
     file_name = path_res + "posterior_draws/" + ID + "_output.pkl"
