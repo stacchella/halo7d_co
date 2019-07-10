@@ -245,7 +245,6 @@ class ElineMargSEDModel(PolySedModel):
                     doublet_done.append(ii_name)
                     amplitdes_mle.append(np.sum(residual_spec*gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), 1.0, eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])[mask]/error_spec**2) / np.sum(gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), 1.0, eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])[mask]**2/error_spec**2))
                     amplitdes_mle[amplitdes_mle < 0.0] = 0.0
-                    print amplitdes_mle[-1]
                     eline_spec += gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), amplitdes_mle[-1], eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])
                 else:
                     continue
