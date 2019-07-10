@@ -44,6 +44,12 @@ def get_boxed_mask(wavelength, mask):
     return(mask_blocks)
 
 
+doublet_info = {}
+doublet_info['[OII]'] = {'w1': 3727.09, 'w2': 3729.88, 'ratio': 1.0}
+doublet_info['[OIII]'] = {'w1': 4960.30, 'w2': 5008.24, 'ratio': 0.33}
+doublet_info['[NII]'] = {'w1': 6549.86, 'w2': 6585.27, 'ratio': 0.33}
+
+
 def get_lines_to_fit(wavelength, mask, redshift):
     line_fit_name = np.array(['Ha', 'Hb', 'Hg', 'Hd', 'He', 'H8', 'H9', 'H10', 'HeI', '[NII]', '[NII]', '[OII]', '[OII]', '[OIII]', '[OIII]', '[NeIII]'])
     line_fit_rest_wave = np.array([6564.61, 4862.69, 4341.69, 4102.92, 3971.19, 3890.15, 3836.48, 3798.98, 3889.0, 6585.27, 6549.86, 3727.09, 3729.88, 5008.24, 4960.30, 3869.81])
@@ -63,7 +69,7 @@ def get_lines_to_fit(wavelength, mask, redshift):
     return(line_fit_name[idx_line], line_fit_rest_wave[idx_line])
 
 
-def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_floor_phot=0.05, err_floor_spec=0.1, S2N_cut=1.0, remove_mips24=False, switch_off_phot=False, switch_off_spec=False, **kwargs):
+def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_floor_phot=0.001, err_floor_spec=0.001, S2N_cut=1.0, remove_mips24=False, switch_off_phot=False, switch_off_spec=False, **kwargs):
     """Load photometry from an ascii file.  Assumes the following columns:
     `objid`, `filterset`, [`mag0`,....,`magN`] where N >= 11.  The User should
     modify this function (including adding keyword arguments) to read in their
@@ -146,7 +152,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['wavelength'] = catalog[idx_cat]['LAM'].data
     obs['spectrum'] = catalog[idx_cat]['FLUX'].data * conversion_factor
     obs['unc'] = np.clip(catalog[idx_cat]['ERR'].data * conversion_factor, catalog[idx_cat]['FLUX'].data * conversion_factor * err_floor_spec, np.inf)
-    obs['mask'] = (obs['wavelength'] < 9150.0) & \
+    obs['mask'] = (obs['wavelength'] < 9150.0) & (catalog[idx_cat]['ERR'].data < 6000.0) & \
                   (obs['wavelength'] > (1.0 + catalog[idx_cat]['ZSPEC']) * 3525.0) & (obs['wavelength'] < (1.0 + catalog[idx_cat]['ZSPEC']) * 7500.0) & \
                    ~((obs['wavelength'] > 6860.0) & (obs['wavelength'] < 6920.0)) & \
                    ~((obs['wavelength'] > 7150.0) & (obs['wavelength'] < 7340.0)) & \
@@ -191,7 +197,10 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
 # --------------
 
 from prospect.models.sedmodel import PolySedModel, gauss
-from scipy import optimize
+
+
+def gauss_doublet(x, w1, a1, sigma, w2, ratio):
+    return(gauss(x, w1, a1, sigma) + gauss(x, w2, ratio*a1, sigma))
 
 
 class ElineMargSEDModel(PolySedModel):
@@ -212,32 +221,43 @@ class ElineMargSEDModel(PolySedModel):
         s, p, x = self.sed(theta, obs, sps=sps, **extras)
         self._speccal = self.spec_calibration(obs=obs, **extras)
         s *= self._speccal
-        self._el, popt_EL, pcov_EL = self.get_el(obs, s, EL_info=EL_info)
+        self._el, amplitdes_mle = self.get_el(obs, s, EL_info=EL_info)
         if obs.get('logify_spectrum', False):
-            return np.log(s), p, x, popt_EL, pcov_EL
+            return np.log(s), p, x, amplitdes_mle
         else:
-            return s, p, x, self._el, popt_EL, pcov_EL, self._speccal
+            return s, p, x, self._el, amplitdes_mle, self._speccal
 
     def get_el(self, obs, spec, EL_info):
+        # set up residual spectrum to be fit
         mask = obs.get('mask', slice(None))
-        residual_spec = obs['spectrum']-spec  # self._spec
+        residual_spec = obs['spectrum'][mask]-spec[mask]
         residual_spec *= 1e10
+        error_spec = 1e10*obs["unc"][mask]  # that is not right, needs to be fixed
         eline_wavelength = np.log(self.params['eline_wavelength'] * (1.0 + self.params['zred'] + self.params["dzred_gas"]))
-
-        def gaussian_wrap(x, *vec):
-            return(gauss(x, eline_wavelength, vec[1:], vec[0]))
-
-        popt_gauss, pcov_gauss = optimize.curve_fit(gaussian_wrap, np.log(obs["wavelength"][mask]), residual_spec[mask], sigma=obs["unc"][mask],
-                                                    p0=np.append(100.0/2.998e5, 0.01*np.ones(len(self.params['eline_wavelength']))),
-                                                    bounds=(np.append(0.0, len(self.params['eline_wavelength'])*[0.0]).tolist(), np.append(350.0/2.998e5, len(self.params['eline_wavelength'])*[1.0]).tolist()),
-                                                    ftol=1e-4, xtol=1e-4, maxfev=int(1e5))
-
-        # optimize.curve_fit(gaussian_wrap, np.log(obs["wavelength"][mask]), residual_spec[mask], sigma=obs["unc"][mask], p0=np.append(100.0/2.998e5, np.median(np.abs(residual_spec[mask]))*np.ones(len(self.params['eline_wavelength']))), ftol=1e-2, xtol=1e-2, maxfev=int(1e5))
-
+        eline_sigma = self.params['sigma_gas']/2.998e5
+        eline_spec = np.zeros(len(obs['spectrum']))
+        # iterate over all lines
+        amplitdes_mle = []
+        doublet_done = []
+        for ii_line, ii_name in enumerate(self.params['eline_names']):
+            if (ii_name in doublet_info.keys()):
+                if (ii_name not in doublet_done):
+                    doublet_done.append(ii_name)
+                    amplitdes_mle.append(np.sum(residual_spec*gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), 1.0, eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])[mask]/error_spec**2) / np.sum(gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), 1.0, eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])[mask]**2/error_spec**2))
+                    amplitdes_mle[amplitdes_mle < 0.0] = 0.0
+                    print amplitdes_mle[-1]
+                    eline_spec += gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), amplitdes_mle[-1], eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])
+                else:
+                    continue
+            else:
+                amplitdes_mle.append(np.sum(residual_spec*gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], 1.0, eline_sigma)[mask]/error_spec**2) / np.sum(gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], 1.0, eline_sigma)[mask]**2/error_spec**2))
+                amplitdes_mle[amplitdes_mle < 0.0] = 0.0
+                eline_spec += gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], amplitdes_mle[-1], eline_sigma)
+        # return best-fit EL spectrum
         if EL_info:
-            return(gaussian_wrap(np.log(obs["wavelength"]), *popt_gauss)*1e-10, popt_gauss, pcov_gauss)
+            return(eline_spec*1e-10, amplitdes_mle*1e-10)
         else:
-            return(gaussian_wrap(np.log(obs["wavelength"]), *popt_gauss)*1e-10)
+            return(eline_spec*1e-10)
 
 
 def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False,
@@ -293,6 +313,9 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     model_params.update(TemplateLibrary['spectral_smoothing'])
     model_params["sigma_smooth"]["prior"] = priors.TopHat(mini=50.0, maxi=350.0)
     model_params["sigma_smooth"]["init"] = 200.0
+    model_params["sigma_gas"] = {"N": 1, "isfree": True,
+                                 "init": 200.0, "units": "velocity dispersion of gas",
+                                 "prior": priors.TopHat(mini=50.0, maxi=350.0)}
 
     # modeling noise
     model_params['f_outlier_spec'] = {"N": 1,
@@ -357,16 +380,26 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
         model_params['eline_wavelength'] = {'N': 0,
                                             'init': np.array([]),
                                             'isfree': False}
+        model_params['eline_names'] = {'N': 0,
+                                       'init': np.array([]),
+                                       'isfree': False}
 
     else:
-        mask = (catalog[idx_cat]['ERR'].data < 6000.0) & (catalog[idx_cat]['LAM'].data > (1.0 + catalog[idx_cat]['ZSPEC']) * 3550)
         wave = catalog[idx_cat]['LAM'].data
+        mask = (wave < 9150.0) & (catalog[idx_cat]['ERR'].data < 6000.0) & \
+               (wave > (1.0 + catalog[idx_cat]['ZSPEC']) * 3525.0) & (wave < (1.0 + catalog[idx_cat]['ZSPEC']) * 7500.0) & \
+              ~((wave > 6860.0) & (wave < 6920.0)) & \
+              ~((wave > 7150.0) & (wave < 7340.0)) & \
+              ~((wave > 7575.0) & (wave < 7725.0))
         line_names, rest_waves = get_lines_to_fit(wave, mask, catalog[idx_cat]['ZSPEC'])
 
         # choose EL that are in wavelength range => add to obs
         model_params['eline_wavelength'] = {'N': len(rest_waves),
                                             'init': np.array(rest_waves),
                                             'isfree': False}
+        model_params['eline_names'] = {'N': len(line_names),
+                                       'init': np.array(line_names),
+                                       'isfree': False}
 
     # Now instantiate the model using this new dictionary of parameter specifications
     #model = sedmodel.PolySedModel(model_params)
@@ -503,9 +536,9 @@ if __name__ == '__main__':
                         help="Names of table from which to get photometry.")
     parser.add_argument('--objid', type=int, default=0,
                         help="Zero-index row number in the table to fit.")
-    parser.add_argument('--err_floor_phot', type=np.float, default=0.05,
+    parser.add_argument('--err_floor_phot', type=np.float, default=0.001,
                         help="Error floor for photometry.")
-    parser.add_argument('--err_floor_spec', type=np.float, default=0.1,
+    parser.add_argument('--err_floor_spec', type=np.float, default=0.001,
                         help="Error floor for spectroscopy.")
     parser.add_argument('--S2N_cut', type=np.float, default=5.0,
                         help="Signal-to-noise cut applied to sample.")
