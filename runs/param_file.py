@@ -223,7 +223,7 @@ class ElineMargSEDModel(PolySedModel):
         s *= self._speccal
         self._el, amplitdes_mle = self.get_el(obs, s, EL_info=EL_info)
         if obs.get('logify_spectrum', False):
-            return np.log(s), p, x, amplitdes_mle
+            return np.log(s), p, x, self._el, amplitdes_mle, self._speccal
         else:
             return s, p, x, self._el, amplitdes_mle, self._speccal
 
@@ -254,7 +254,7 @@ class ElineMargSEDModel(PolySedModel):
                 eline_spec += gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], amplitdes_mle[-1], eline_sigma)
         # return best-fit EL spectrum
         if EL_info:
-            return(eline_spec*1e-10, amplitdes_mle*1e-10)
+            return(eline_spec*1e-10, np.array(amplitdes_mle)*1e-10)
         else:
             return(eline_spec*1e-10)
 
