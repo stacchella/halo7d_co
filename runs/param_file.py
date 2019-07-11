@@ -244,17 +244,17 @@ class ElineMargSEDModel(PolySedModel):
                 if (ii_name not in doublet_done):
                     doublet_done.append(ii_name)
                     amplitdes_mle.append(np.sum(residual_spec*gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), 1.0, eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])[mask]/error_spec**2) / np.sum(gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), 1.0, eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])[mask]**2/error_spec**2))
-                    amplitdes_mle[amplitdes_mle < 0.0] = 0.0
-                    eline_spec += gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), amplitdes_mle[-1], eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])
+                    eline_spec += gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), max([0.0, amplitdes_mle[-1]]), eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])
                 else:
                     continue
             else:
                 amplitdes_mle.append(np.sum(residual_spec*gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], 1.0, eline_sigma)[mask]/error_spec**2) / np.sum(gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], 1.0, eline_sigma)[mask]**2/error_spec**2))
-                amplitdes_mle[amplitdes_mle < 0.0] = 0.0
-                eline_spec += gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], amplitdes_mle[-1], eline_sigma)
+                eline_spec += gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], max([0.0, amplitdes_mle[-1]]), eline_sigma)
         # return best-fit EL spectrum
+        amplitdes_mle = np.array(amplitdes_mle)
+        amplitdes_mle[amplitdes_mle < 0.0] = 0.0
         if EL_info:
-            return(eline_spec*1e-10, np.array(amplitdes_mle)*1e-10)
+            return(eline_spec*1e-10, amplitdes_mle*1e-10)
         else:
             return(eline_spec*1e-10)
 
