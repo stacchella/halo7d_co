@@ -136,6 +136,8 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['maggies'] = mags * 1e-10
     # You should use real flux uncertainties (incl. error floor)
     obs['maggies_unc'] = np.clip(mags_err * 1e-10, mags * 1e-10 * err_floor_phot, np.inf)
+    idx_longw = (np.array(obs['wave_effective']) > 2e4)
+    obs['maggies_unc'][idx_longw] = np.clip(mags_err[idx_longw] * 1e-10, mags[idx_longw] * 1e-10 * 2.0 * err_floor_phot, np.inf)
     # Here we mask out any NaNs or infs
     obs['phot_mask'] = np.isfinite(np.squeeze(mags)) & (mags != mags_err) & (mags != -99.0) & (mags_err > 0)
     # We have a spectrum (should be units of maggies). wavelength in AA
