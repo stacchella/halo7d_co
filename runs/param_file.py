@@ -285,7 +285,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     if non_param_sfh:
         t_univ = cosmo.age(catalog[idx_cat]['ZSPEC']).value
         model_params = TemplateLibrary["continuity_sfh"]
-        model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=7)
+        model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=8)
     else:
         model_params = TemplateLibrary["parametric_sfh"]
         model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
