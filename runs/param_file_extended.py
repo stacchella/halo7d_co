@@ -289,7 +289,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     else:
         model_params = TemplateLibrary["parametric_sfh"]
         model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
-        model_params["tage"]["prior"] = priors.TopHat(mini=0.0, maxi=cosmo.age(catalog[idx_cat]['z']).value)
+        model_params["tage"]["prior"] = priors.TopHat(mini=0.0, maxi=cosmo.age(catalog[idx_cat]['ZSPEC']).value)
 
     # adjust priors
     model_params["dust2"]["prior"] = priors.TopHat(mini=0.0, maxi=3.0)
@@ -306,7 +306,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     model_params["zred"]["prior"] = priors.TopHat(mini=catalog[idx_cat]['ZSPEC']-0.01, maxi=catalog[idx_cat]['ZSPEC']+0.01)
     model_params["dzred_gas"] = {"N": 1, "isfree": True,
                                  "init": 0.0, "units": "redshift of gas relative to stars",
-                                 "prior": priors.Normal(sigma=0.001, mean=0.0)}
+                                 "prior": priors.ClippedNormal(mean=0.0, sigma=0.0005, mini=-0.002, maxi=0.002)}
 
     # velocity dispersion
     model_params.update(TemplateLibrary['spectral_smoothing'])
@@ -314,13 +314,13 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     model_params["sigma_smooth"]["init"] = 200.0
     model_params["sigma_gas"] = {"N": 1, "isfree": True,
                                  "init": 200.0, "units": "velocity dispersion of gas",
-                                 "prior": priors.TopHat(mini=50.0, maxi=350.0)}
+                                 "prior": priors.TopHat(mini=50.0, maxi=300.0)}
 
     # modeling noise
     model_params['f_outlier_spec'] = {"N": 1,
                                       "isfree": True,
                                       "init": 0.01,
-                                      "prior": priors.TopHat(mini=1e-5, maxi=0.5)}
+                                      "prior": priors.TopHat(mini=1e-5, maxi=0.3)}
 
     model_params['nsigma_outlier_spec'] = {"N": 1,
                                            "isfree": False,
@@ -364,7 +364,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     if fit_continuum:
         # order of polynomial that's fit to spectrum
         model_params['polyorder'] = {'N': 1,
-                                     'init': 14,
+                                     'init': 10,
                                      'isfree': False}
         # fit for normalization of spectrum
         model_params['spec_norm'] = {'N': 1,
