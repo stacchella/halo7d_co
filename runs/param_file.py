@@ -271,12 +271,20 @@ class ElineMargSEDModel(PolySedModel):
             if (ii_name in doublet_info.keys()):
                 if (ii_name not in doublet_done):
                     doublet_done.append(ii_name)
-                    amplitdes_mle.append(np.sum(residual_spec*gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), 1.0, eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])[mask]/error_spec**2) / np.sum(gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), 1.0, eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])[mask]**2/error_spec**2))
+                    div = np.sum(gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), 1.0, eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])[mask]**2/error_spec**2)
+                    if (div == 0.0):
+                        amplitdes_mle.append(0.0)
+                    else:
+                        amplitdes_mle.append(np.sum(residual_spec*gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), 1.0, eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])[mask]/error_spec**2) / div)
                     eline_spec += gauss_doublet(np.log(obs["wavelength"]), np.log(doublet_info[ii_name]['w1'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), max([0.0, amplitdes_mle[-1]]), eline_sigma, np.log(doublet_info[ii_name]['w2'] * (1.0 + self.params['zred'] + self.params["dzred_gas"])), doublet_info[ii_name]['ratio'])
                 else:
                     continue
             else:
-                amplitdes_mle.append(np.sum(residual_spec*gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], 1.0, eline_sigma)[mask]/error_spec**2) / np.sum(gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], 1.0, eline_sigma)[mask]**2/error_spec**2))
+                div = np.sum(gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], 1.0, eline_sigma)[mask]**2/error_spec**2)
+                if (div == 0.0):
+                    amplitdes_mle.append(0.0)
+                else:
+                    amplitdes_mle.append(np.sum(residual_spec*gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], 1.0, eline_sigma)[mask]/error_spec**2) / div)
                 eline_spec += gauss(np.log(obs["wavelength"]), eline_wavelength[ii_line], max([0.0, amplitdes_mle[-1]]), eline_sigma)
         # return best-fit EL spectrum
         amplitdes_mle = np.array(amplitdes_mle)
@@ -342,7 +350,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     model_params["sigma_smooth"]["init"] = 200.0
     model_params["sigma_gas"] = {"N": 1, "isfree": True,
                                  "init": 100.0, "units": "velocity dispersion of gas",
-                                 "prior": priors.TopHat(mini=10.0, maxi=300.0)}
+                                 "prior": priors.ClippedNormal(mean=100.0, sigma=30.0, mini=10.0, maxi=350.0)}
 
     # modeling noise
     model_params['f_outlier_spec'] = {"N": 1,
