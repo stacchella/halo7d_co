@@ -340,17 +340,11 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     model_params["zred"]['isfree'] = True
     model_params["zred"]["init"] = catalog[idx_cat]['ZSPEC']
     model_params["zred"]["prior"] = priors.TopHat(mini=catalog[idx_cat]['ZSPEC']-0.01, maxi=catalog[idx_cat]['ZSPEC']+0.01)
-    model_params["dzred_gas"] = {"N": 1, "isfree": True,
-                                 "init": 0.0, "units": "redshift of gas relative to stars",
-                                 "prior": priors.ClippedNormal(mean=0.0, sigma=0.0005, mini=-0.002, maxi=0.002)}
 
     # velocity dispersion
     model_params.update(TemplateLibrary['spectral_smoothing'])
     model_params["sigma_smooth"]["prior"] = priors.TopHat(mini=50.0, maxi=350.0)
     model_params["sigma_smooth"]["init"] = 200.0
-    model_params["sigma_gas"] = {"N": 1, "isfree": True,
-                                 "init": 100.0, "units": "velocity dispersion of gas",
-                                 "prior": priors.ClippedNormal(mean=100.0, sigma=30.0, mini=10.0, maxi=350.0)}
 
     # modeling noise
     model_params['f_outlier_spec'] = {"N": 1,
@@ -418,6 +412,12 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
         model_params['eline_names'] = {'N': 0,
                                        'init': np.array([]),
                                        'isfree': False}
+        model_params['dzred_gas'] = {'N': 0,
+                                     'init': np.array([]),
+                                     'isfree': False}
+        model_params['sigma_gas'] = {'N': 0,
+                                     'init': np.array([]),
+                                     'isfree': False}
 
     else:
         wave = catalog[idx_cat]['LAM'].data
@@ -435,6 +435,12 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
         model_params['eline_names'] = {'N': len(line_names),
                                        'init': np.array(line_names),
                                        'isfree': False}
+        model_params["dzred_gas"] = {"N": 1, "isfree": True,
+                                     "init": 0.0, "units": "redshift of gas relative to stars",
+                                     "prior": priors.ClippedNormal(mean=0.0, sigma=0.0005, mini=-0.002, maxi=0.002)}
+        model_params["sigma_gas"] = {"N": 1, "isfree": True,
+                                     "init": 100.0, "units": "velocity dispersion of gas",
+                                     "prior": priors.ClippedNormal(mean=100.0, sigma=30.0, mini=10.0, maxi=350.0)}
 
     # Now instantiate the model using this new dictionary of parameter specifications
     #model = sedmodel.PolySedModel(model_params)
