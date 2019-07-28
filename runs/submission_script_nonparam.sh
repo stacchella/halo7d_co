@@ -34,8 +34,8 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --add_jitter \
 --dynesty \
 --nested_method="rwalk" \
---nlive_batch=200 \
---nlive_init=200 \
+--nlive_batch=300 \
+--nlive_init=300 \
 --nested_posterior_thresh=0.05 \
 --nested_dlogz_init=0.05 \
 --nested_maxcall=3000000 

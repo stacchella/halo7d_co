@@ -144,8 +144,6 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     filternames = filternames[choice_finite]
     mags = mags[choice_finite]
     mags_err = mags_err[choice_finite]
-    print filternames
-    print mags_err/mags
     # add error from zeropoint offsets in quadrature
     zp_offsets = load_zp_offsets(field_name_filters.upper())
     band_names = np.array([x['Band'].lower()+'_'+x['Field'].lower() for x in zp_offsets])
@@ -153,7 +151,6 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
         match = (band_names == f)
         if match.sum():
             mags_err[ii] = ((mags_err[ii]**2) + (mags[ii]*(1-zp_offsets[match]['Flux-Correction'][0]))**2)**0.5
-    print mags_err/mags
     # Build output dictionary.
     obs = {}
     # This is a list of sedpy filter objects.    See the
@@ -167,7 +164,6 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['maggies_unc'] = np.clip(mags_err * 1e-10, mags * 1e-10 * err_floor_phot, np.inf)
     idx_longw = (np.array(obs['wave_effective']) > 2e4)
     obs['maggies_unc'][idx_longw] = np.clip(mags_err[idx_longw] * 1e-10, mags[idx_longw] * 1e-10 * 2.0 * err_floor_phot, np.inf)
-    print obs['maggies_unc']/obs['maggies']
     # Here we mask out any NaNs or infs
     obs['phot_mask'] = np.isfinite(np.squeeze(mags)) & (mags != mags_err) & (mags != -99.0) & (mags_err > 0)
     # We have a spectrum (should be units of maggies). wavelength in AA
@@ -345,8 +341,8 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     model_params["sigma_smooth"]["prior"] = priors.TopHat(mini=50.0, maxi=350.0)
     model_params["sigma_smooth"]["init"] = 200.0
     model_params["sigma_gas"] = {"N": 1, "isfree": True,
-                                 "init": 200.0, "units": "velocity dispersion of gas",
-                                 "prior": priors.TopHat(mini=50.0, maxi=350.0)}
+                                 "init": 100.0, "units": "velocity dispersion of gas",
+                                 "prior": priors.ClippedNormal(mean=100.0, sigma=50, mini=0.0, maxi=350.0)}
 
     # modeling noise
     model_params['f_outlier_spec'] = {"N": 1,
@@ -356,34 +352,34 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
 
     model_params['nsigma_outlier_spec'] = {"N": 1,
                                            "isfree": False,
-                                           "init": 5.0}
+                                           "init": 10.0}
 
     # noise jitter
     if add_jitter:
         model_params['spec_jitter'] = {"N": 1,
                                        "isfree": True,
-                                       "init": 1.0,
+                                       "init": 2.0,
                                        "prior": priors.TopHat(mini=1.0, maxi=4.0)}
 
     # Change the model parameter specifications based on some keyword arguments
     if add_duste:
         # Add dust emission (with fixed dust SED parameters)
         model_params.update(TemplateLibrary["dust_emission"])
-        model_params['duste_gamma']['isfree'] = False
-        #model_params['duste_gamma']['init'] = 1e-2
-        #model_params['duste_gamma']['prior'] = priors.LogUniform(mini=1e-3, maxi=1e-1)
+        model_params['duste_gamma']['isfree'] = True
+        model_params['duste_gamma']['init'] = 1e-2
+        model_params['duste_gamma']['prior'] = priors.LogUniform(mini=1e-3, maxi=1e-1)
         model_params['duste_qpah']['isfree'] = True
         model_params['duste_qpah']['prior'] = priors.TopHat(mini=0.5, maxi=7.0)
-        model_params['duste_umin']['isfree'] = False
-        #model_params['duste_umin']['prior'] = priors.ClippedNormal(mean=1.0, sigma=0.5, mini=0.1, maxi=25)
+        model_params['duste_umin']['isfree'] = True
+        model_params['duste_umin']['prior'] = priors.ClippedNormal(mean=1.0, sigma=0.5, mini=0.1, maxi=25)
 
     if add_agn:
         # Add dust emission (with fixed dust SED parameters)
         model_params.update(TemplateLibrary["agn"])
         model_params['fagn']['isfree'] = True
         model_params['fagn']['prior'] = priors.LogUniform(mini=1e-5, maxi=3.0)
-        model_params['agn_tau']['isfree'] = False
-        #model_params['agn_tau']['prior'] = priors.LogUniform(mini=5.0, maxi=150.)
+        model_params['agn_tau']['isfree'] = True
+        model_params['agn_tau']['prior'] = priors.LogUniform(mini=5.0, maxi=150.)
 
     if add_neb:
         # Add nebular emission (with fixed parameters)
