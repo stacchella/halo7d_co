@@ -69,6 +69,25 @@ def get_lines_to_fit(wavelength, mask, redshift):
     return(line_fit_name[idx_line], line_fit_rest_wave[idx_line])
 
 
+def load_zp_offsets(field):
+    # load skelton zp offsets
+    filename = path_wdir+'data/zp_offsets_tbl11_skel14.txt'
+    with open(filename, 'r') as f:
+        for jj in range(1):
+            hdr = f.readline().split()
+    dtype = [np.dtype((str, 35)), np.dtype((str, 35)), np.float, np.float]
+    dat = np.loadtxt(filename, comments='#', dtype=np.dtype([(hdr[n+1], dtype[n]) for n in xrange(len(hdr)-1)]))
+    # load field data
+    if field is not None:
+        good = dat['Field'] == field
+        if np.sum(good) == 0:
+            print 'Not an acceptable field name! Returning None'
+            print 1/0
+        else:
+            dat = dat[good]
+    return dat
+
+
 def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_floor_phot=0.001, err_floor_spec=0.001, S2N_cut=1.0, remove_mips24=False, switch_off_phot=False, switch_off_spec=False, **kwargs):
     """Load photometry from an ascii file.  Assumes the following columns:
     `objid`, `filterset`, [`mag0`,....,`magN`] where N >= 11.  The User should
@@ -125,6 +144,16 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     filternames = filternames[choice_finite]
     mags = mags[choice_finite]
     mags_err = mags_err[choice_finite]
+    print filternames
+    print mags_err/mags
+    # add error from zeropoint offsets in quadrature
+    zp_offsets = load_zp_offsets(field_name_filters.upper())
+    band_names = np.array([x['Band'].lower()+'_'+x['Field'].lower() for x in zp_offsets])
+    for ii, f in enumerate(filternames):
+        match = (band_names == f)
+        if match.sum():
+            mags_err[ii] = ((mags_err[ii]**2) + (mags[ii]*(1-zp_offsets[match]['Flux-Correction'][0]))**2)**0.5
+    print mags_err/mags
     # Build output dictionary.
     obs = {}
     # This is a list of sedpy filter objects.    See the
@@ -138,6 +167,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['maggies_unc'] = np.clip(mags_err * 1e-10, mags * 1e-10 * err_floor_phot, np.inf)
     idx_longw = (np.array(obs['wave_effective']) > 2e4)
     obs['maggies_unc'][idx_longw] = np.clip(mags_err[idx_longw] * 1e-10, mags[idx_longw] * 1e-10 * 2.0 * err_floor_phot, np.inf)
+    print obs['maggies_unc']/obs['maggies']
     # Here we mask out any NaNs or infs
     obs['phot_mask'] = np.isfinite(np.squeeze(mags)) & (mags != mags_err) & (mags != -99.0) & (mags_err > 0)
     # We have a spectrum (should be units of maggies). wavelength in AA
