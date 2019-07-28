@@ -342,7 +342,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     model_params["sigma_smooth"]["init"] = 200.0
     model_params["sigma_gas"] = {"N": 1, "isfree": True,
                                  "init": 100.0, "units": "velocity dispersion of gas",
-                                 "prior": priors.ClippedNormal(mean=100.0, sigma=50, mini=0.0, maxi=350.0)}
+                                 "prior": priors.ClippedNormal(mean=100.0, sigma=30.0, mini=10.0, maxi=350.0)}
 
     # modeling noise
     model_params['f_outlier_spec'] = {"N": 1,
