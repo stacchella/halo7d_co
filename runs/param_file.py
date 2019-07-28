@@ -342,7 +342,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     model_params["sigma_smooth"]["init"] = 200.0
     model_params["sigma_gas"] = {"N": 1, "isfree": True,
                                  "init": 100.0, "units": "velocity dispersion of gas",
-                                 "prior": priors.ClippedNormal(mean=100.0, sigma=30.0, mini=10.0, maxi=350.0)}
+                                 "prior": priors.TopHat(mini=10.0, maxi=300.0)}
 
     # modeling noise
     model_params['f_outlier_spec'] = {"N": 1,
@@ -352,13 +352,13 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
 
     model_params['nsigma_outlier_spec'] = {"N": 1,
                                            "isfree": False,
-                                           "init": 10.0}
+                                           "init": 5.0}
 
     # noise jitter
     if add_jitter:
         model_params['spec_jitter'] = {"N": 1,
                                        "isfree": True,
-                                       "init": 2.0,
+                                       "init": 1.0,
                                        "prior": priors.TopHat(mini=1.0, maxi=4.0)}
 
     # Change the model parameter specifications based on some keyword arguments
