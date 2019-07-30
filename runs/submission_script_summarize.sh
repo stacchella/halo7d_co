@@ -10,8 +10,6 @@
 #SBATCH -p conroy,itc_cluster,hernquist,shared
 ### memory per cpu, in MB
 #SBATCH --mem-per-cpu=4000
-### constraints
-#SBATCH --constraint=intel
 ### Job name
 #SBATCH -J 'sum_param'
 ### output and error logs
@@ -22,11 +20,10 @@
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
 source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/scripts/draw_posterior_output_cluster.py \
---number_of_bins=150 \
+--number_of_bins=200 \
 --idx_file_key="${SLURM_ARRAY_TASK_ID}" \
---path_results="/n/conroyfs1/stacchella/halo7d_co/results/TBD/" \
+--path_results="/n/conroyfs1/stacchella/halo7d_co/results/param/" \
 --ncalc=1000 \
---non_param_sfh \
 --add_jitter \
 --fit_continuum \
 --add_duste \

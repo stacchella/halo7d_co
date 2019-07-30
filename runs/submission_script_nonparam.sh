@@ -13,17 +13,17 @@
 ### constraints
 #SBATCH --constraint=intel
 ### Job name
-#SBATCH -J 'nonhalo7d'
+#SBATCH -J 'non2halo7d'
 ### output and error logs
-#SBATCH -o nonhalo7d_%a.out
-#SBATCH -e nonhalo7d_%a.err
+#SBATCH -o non2halo7d_%a.out
+#SBATCH -e non2halo7d_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
 source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
---outfile="halo7d_nonparametric" \
+--outfile="halo7d_nonparametric_2" \
 --non_param_sfh \
 --err_floor_phot=0.05 \
 --err_floor_spec=0.001 \
@@ -34,8 +34,8 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --add_jitter \
 --dynesty \
 --nested_method="rwalk" \
---nlive_batch=300 \
---nlive_init=300 \
+--nlive_batch=200 \
+--nlive_init=200 \
 --nested_posterior_thresh=0.05 \
 --nested_dlogz_init=0.05 \
 --nested_maxcall=3000000 

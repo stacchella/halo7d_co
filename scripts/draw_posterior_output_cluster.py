@@ -29,8 +29,8 @@ filter_folder = path_wdir + '/data/filters/'
 # load parameter file
 
 sys.path.append(path_wdir + 'runs/')
+#import param_file_extended as param_file
 import param_file as param_file
-
 
 # pars args
 

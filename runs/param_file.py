@@ -394,7 +394,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     if fit_continuum:
         # order of polynomial that's fit to spectrum
         model_params['polyorder'] = {'N': 1,
-                                     'init': 10,
+                                     'init': 14,
                                      'isfree': False}
         # fit for normalization of spectrum
         model_params['spec_norm'] = {'N': 1,
