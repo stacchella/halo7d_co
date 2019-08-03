@@ -49,6 +49,10 @@ parser.add_argument('--add_duste', action="store_true",
                     help="If set, add dust emission to the model.")
 parser.add_argument('--add_agn', action="store_true",
                     help="If set, add agn emission to the model.")
+parser.add_argument('--switch_off_spec', action="store_true",
+                    help="If set, remove spectrum from obs.")
+parser.add_argument('--switch_off_phot', action="store_true",
+                    help="If set, remove photometry from obs.")
 args = parser.parse_args()
 
 
@@ -75,11 +79,11 @@ def read_results(filename):
     return(res, obs, mod, sps)
 
 
-def investigate(file_input, ncalc, non_param, add_duste=False, add_neb=False, add_jitter=False, add_agn=False, fit_continuum=False, remove_mips24=False):
+def investigate(file_input, ncalc, non_param, add_duste=False, add_neb=False, add_jitter=False, add_agn=False, fit_continuum=False, remove_mips24=False, switch_off_phot=False, switch_off_spec=False):
     print file_input
     # read results
     res, obs, mod, sps = read_results(file_input)
-    mod = param_file.build_model(objid=obs['cat_row']+1, non_param_sfh=non_param, add_duste=add_duste, add_neb=add_neb, add_jitter=add_jitter, add_agn=add_agn, fit_continuum=fit_continuum, remove_mips24=remove_mips24)
+    mod = param_file.build_model(objid=obs['cat_row']+1, non_param_sfh=non_param, add_duste=add_duste, add_neb=add_neb, add_jitter=add_jitter, add_agn=add_agn, fit_continuum=fit_continuum, remove_mips24=remove_mips24, switch_off_phot=switch_off_phot, switch_off_spec=switch_off_spec)
     output = {}
     nsample = res['chain'].shape[0]
     sample_idx = np.random.choice(np.arange(nsample), size=ncalc, p=res['weights'], replace=False)
@@ -105,7 +109,7 @@ print idx_file_considered
 
 for ii in range(len(idx_file_considered)):
     print result_file_list[idx_file_considered[ii]]
-    ID, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=args.non_param_sfh, add_duste=args.add_duste, add_jitter=args.add_jitter, add_agn=args.add_agn, fit_continuum=args.fit_continuum)
+    ID, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=args.non_param_sfh, add_duste=args.add_duste, add_jitter=args.add_jitter, add_agn=args.add_agn, fit_continuum=args.fit_continuum, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec)
     output['file_name'] = result_file_list[idx_file_considered[ii]].split('/')[-1]
     output['ID'] = ID
     file_name = path_res + "posterior_draws/" + ID + "_output.pkl"
