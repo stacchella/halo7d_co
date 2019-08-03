@@ -24,6 +24,7 @@ source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_sfh.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
 --outfile="halo7d_nonparametric_sfh" \
+--prior_file="/n/conroyfs1/stacchella/halo7d_co/results/param/posterior_draws/summary_param_run.pkl"
 --non_param_sfh \
 --err_floor_phot=0.05 \
 --err_floor_spec=0.001 \
@@ -34,8 +35,8 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_sfh.py \
 --add_jitter \
 --dynesty \
 --nested_method="rwalk" \
---nlive_batch=300 \
---nlive_init=300 \
+--nlive_batch=250 \
+--nlive_init=250 \
 --nested_posterior_thresh=0.05 \
 --nested_dlogz_init=0.05 \
 --nested_maxcall=3000000 

@@ -295,7 +295,7 @@ class ElineMargSEDModel(PolySedModel):
             return(eline_spec*1e-10)
 
 
-def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False,
+def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', prior_file=path_wdir + 'data/halo7d_with_phot.fits', non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False,
                 add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, **extras):
     """Construct a model.  This method defines a number of parameter
     specification dictionaries and uses them to initialize a
@@ -312,20 +312,19 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     from prospect.models import priors
     #from prospect.models import transforms
     from astropy.table import Table
+    import hickle
     from astropy.cosmology import Planck15 as cosmo
     # read in data table
     catalog = Table.read(data_table)
     idx_cat = objid-1
+    gal_id = catalog[idx_cat]['ID']
+    # read in prior file
+    summary_param = hickle.load(prior_file)
 
     # get SFH template
-    if non_param_sfh:
-        t_univ = cosmo.age(catalog[idx_cat]['ZSPEC']).value
-        model_params = TemplateLibrary["continuity_sfh"]
-        model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=12)
-    else:
-        model_params = TemplateLibrary["parametric_sfh"]
-        model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
-        model_params["tage"]["prior"] = priors.TopHat(mini=0.0, maxi=cosmo.age(catalog[idx_cat]['ZSPEC']).value)
+    t_univ = cosmo.age(summary_param[gal_id]['thetas']['zred']['q50']).value
+    model_params = TemplateLibrary["continuity_sfh"]
+    model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=12)
 
     # adjust priors
     model_params["dust2"]["prior"] = priors.TopHat(mini=0.0, maxi=3.0)
@@ -333,13 +332,13 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     model_params["logzsol"]["prior"] = priors.TopHat(mini=-1.0, maxi=0.3)
     model_params["dust_type"]["init"] = 4
     model_params["dust_index"] = {"N": 1, "isfree": True,
-                                  "init": 0.0, "units": "power-law multiplication of Calzetti",
-                                  "prior": priors.TopHat(mini=-2.0, maxi=0.5)}
+                                  "init": summary_param[gal_id]['thetas']['dust_index']['q50'], "units": "power-law multiplication of Calzetti",
+                                  "prior": priors.ClippedNormal(mean=summary_param[gal_id]['thetas']['dust_index']['q50'], sigma=np.abs(summary_param[gal_id]['thetas']['dust_index']['q84']-summary_param[gal_id]['thetas']['dust_index']['q50']), mini=-2.0, maxi=0.5)}
 
     # fit for redshift
     model_params["zred"]['isfree'] = True
-    model_params["zred"]["init"] = catalog[idx_cat]['ZSPEC']
-    model_params["zred"]["prior"] = priors.TopHat(mini=catalog[idx_cat]['ZSPEC']-0.01, maxi=catalog[idx_cat]['ZSPEC']+0.01)
+    model_params["zred"]["init"] = summary_param[gal_id]['thetas']['zred']['q50']
+    model_params["zred"]["prior"] = priors.TopHat(mini=summary_param[gal_id]['thetas']['zred']['q50']-0.005, maxi=summary_param[gal_id]['thetas']['zred']['q50']+0.005)
 
     # velocity dispersion
     model_params.update(TemplateLibrary['spectral_smoothing'])
@@ -368,20 +367,19 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
         # Add dust emission (with fixed dust SED parameters)
         model_params.update(TemplateLibrary["dust_emission"])
         model_params['duste_gamma']['isfree'] = False
-        #model_params['duste_gamma']['init'] = 1e-2
-        #model_params['duste_gamma']['prior'] = priors.LogUniform(mini=1e-3, maxi=1e-1)
-        model_params['duste_qpah']['isfree'] = True
-        model_params['duste_qpah']['prior'] = priors.TopHat(mini=0.5, maxi=7.0)
+        model_params['duste_gamma']['init'] = summary_param[gal_id]['thetas']['duste_gamma']['q50']
+        model_params['duste_qpah']['isfree'] = False
+        model_params['duste_qpah']['init'] = summary_param[gal_id]['thetas']['duste_qpah']['q50']
         model_params['duste_umin']['isfree'] = False
-        #model_params['duste_umin']['prior'] = priors.ClippedNormal(mean=1.0, sigma=0.5, mini=0.1, maxi=25)
+        model_params['duste_umin']['init'] = summary_param[gal_id]['thetas']['duste_umin']['q50']
 
     if add_agn:
         # Add dust emission (with fixed dust SED parameters)
         model_params.update(TemplateLibrary["agn"])
-        model_params['fagn']['isfree'] = True
-        model_params['fagn']['prior'] = priors.LogUniform(mini=1e-5, maxi=3.0)
-        model_params['agn_tau']['isfree'] = True
-        model_params['agn_tau']['prior'] = priors.LogUniform(mini=5.0, maxi=150.)
+        model_params['fagn']['isfree'] = False
+        model_params['fagn']['init'] = summary_param[gal_id]['thetas']['fagn']['q50']
+        model_params['agn_tau']['isfree'] = False
+        model_params['agn_tau']['init'] = summary_param[gal_id]['thetas']['agn_tau']['q50']
 
     if add_neb:
         # Add nebular emission (with fixed parameters)
@@ -394,7 +392,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     if fit_continuum:
         # order of polynomial that's fit to spectrum
         model_params['polyorder'] = {'N': 1,
-                                     'init': 10,
+                                     'init': 14,
                                      'isfree': False}
         # fit for normalization of spectrum
         model_params['spec_norm'] = {'N': 1,
@@ -574,7 +572,9 @@ if __name__ == '__main__':
     parser.add_argument('--remove_mips24', action="store_true",
                         help="If set, removes MIPS 24um flux.")
     parser.add_argument('--data_table', type=str, default=path_wdir+"data/halo7d_with_phot.fits",
-                        help="Names of table from which to get photometry.")
+                        help="Name of table from which to get photometry.")
+    parser.add_argument('--prior_file', type=str, default=path_wdir+"data/halo7d_with_phot.fits",
+                        help="Name of file containing priors.")
     parser.add_argument('--objid', type=int, default=0,
                         help="Zero-index row number in the table to fit.")
     parser.add_argument('--err_floor_phot', type=np.float, default=0.001,
