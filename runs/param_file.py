@@ -200,7 +200,7 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
         obs['unc'] = None
         obs['mask'] = None
     if switch_off_phot:
-        obs['phot_mask'] = (np.array(obs['wave_effective']) == 7646.0363672352305)
+        obs['phot_mask'] = (np.array(obs['wave_effective']) > 7640.0) & (np.array(obs['wave_effective']) < 7660.0)
     obs['cat_row'] = idx_cat
     obs['id_halo7d'] = catalog[idx_cat]['ID']
     obs['id_3dhst'] = catalog[idx_cat]['id_3dhst']
