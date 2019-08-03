@@ -24,7 +24,7 @@ source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_sfh.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
 --outfile="halo7d_nonparametric_sfh" \
---prior_file="/n/conroyfs1/stacchella/halo7d_co/results/param/posterior_draws/summary_param_run.pkl"
+--prior_file="/n/conroyfs1/stacchella/halo7d_co/results/param/posterior_draws/summary_param_run.pkl" \
 --non_param_sfh \
 --err_floor_phot=0.05 \
 --err_floor_spec=0.001 \
