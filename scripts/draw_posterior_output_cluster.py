@@ -39,6 +39,8 @@ parser.add_argument("--number_of_bins", type=int, help="number of cores")
 parser.add_argument("--idx_file_key", type=int, help="iteration variable")
 parser.add_argument("--path_results", type=str, help="path results")
 parser.add_argument("--ncalc", type=int, help="number of samples to draw from posterior")
+parser.add_argument('--prior_file', type=str, default=path_wdir+"data/halo7d_with_phot.fits",
+                    help="Name of file containing priors.")
 parser.add_argument('--non_param_sfh', action="store_true",
                     help="If set, fit non-parametric star-formation history model.")
 parser.add_argument('--add_jitter', action="store_true",
