@@ -27,7 +27,7 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_sfh.py \
 --prior_file="/n/conroyfs1/stacchella/halo7d_co/results/param/posterior_draws/summary_param_run.pkl" \
 --non_param_sfh \
 --err_floor_phot=0.05 \
---err_floor_spec=0.001 \
+--err_floor_spec=0.05 \
 --S2N_cut=5.0 \
 --fit_continuum \
 --add_duste \
@@ -35,8 +35,8 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_sfh.py \
 --add_jitter \
 --dynesty \
 --nested_method="rwalk" \
---nlive_batch=250 \
---nlive_init=250 \
+--nlive_batch=100 \
+--nlive_init=100 \
 --nested_posterior_thresh=0.05 \
 --nested_dlogz_init=0.05 \
 --nested_maxcall=3000000 
