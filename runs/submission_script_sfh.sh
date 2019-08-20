@@ -27,13 +27,14 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file_sfh.py \
 --prior_file="/n/conroyfs1/stacchella/halo7d_co/results/param/posterior_draws/summary_param_run.pkl" \
 --non_param_sfh \
 --err_floor_phot=0.05 \
---err_floor_spec=0.05 \
+--err_floor_spec=0.01 \
 --S2N_cut=5.0 \
 --fit_continuum \
 --add_duste \
 --add_agn \
 --add_jitter \
 --dynesty \
+--remove_mips24 \
 --nested_method="rwalk" \
 --nlive_batch=100 \
 --nlive_init=100 \
