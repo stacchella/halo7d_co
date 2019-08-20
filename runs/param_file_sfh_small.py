@@ -235,9 +235,9 @@ class ElineMargSEDModel(PolySedModel):
 
     def mean_model(self, theta, obs, sps=None, EL_info=False, **extras):
         s, p, x = self.sed(theta, obs, sps=sps, **extras)
-        self._speccal = self.spec_calibration(obs=obs, **extras)
-        s *= self._speccal
         if obs['spectrum'] is not None:
+            self._speccal = self.spec_calibration(obs=obs, **extras)
+            s *= self._speccal
             self._el = self.get_el(obs, s, EL_info=EL_info)
             s += self._el
         if obs.get('logify_spectrum', False):
