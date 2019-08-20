@@ -324,7 +324,10 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', pr
     # get SFH template
     t_univ = cosmo.age(summary_param[gal_id]['thetas']['zred']['q50']).value
     model_params = TemplateLibrary["continuity_sfh"]
-    model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=12)
+    model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=8)
+    new_t = np.log10(0.5*(10**model_params['agebins']['init'][-1][-1]+10**model_params['agebins']['init'][-2][0]))
+    model_params['agebins']['init'][-1][0] = new_t
+    model_params['agebins']['init'][-2][-1] = new_t
 
     # adjust priors
     model_params["dust2"]["prior"] = priors.TopHat(mini=0.0, maxi=3.0)
