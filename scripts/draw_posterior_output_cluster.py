@@ -93,7 +93,7 @@ def investigate(file_input, ncalc, non_param, add_duste=False, add_neb=False, ad
     nsample = res['chain'].shape[0]
     sample_idx = np.random.choice(np.arange(nsample), size=ncalc, p=res['weights'], replace=False)
     output = toolbox_prospector.build_output(res, mod, sps, obs, sample_idx, ncalc=ncalc, non_param=non_param, shorten_spec=False, elines=None, abslines=None)
-    return(obs['id_halo7d'], output)
+    return(obs['id_halo7d'], obs['id_3dhst'], obs['RA'], obs['DEC'], obs['SN_calc'], output)
 
 
 def get_file_ids(number_of_bins, idx_file_key=1.0, **kwargs):
@@ -114,9 +114,12 @@ print idx_file_considered
 
 for ii in range(len(idx_file_considered)):
     print result_file_list[idx_file_considered[ii]]
-    ID, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=args.non_param_sfh, add_duste=args.add_duste, add_jitter=args.add_jitter, add_agn=args.add_agn, fit_continuum=args.fit_continuum, remove_mips24=args.remove_mips24, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec, prior_file=args.prior_file)
+    ID, id_3dhst, ra, dec, sn, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=args.non_param_sfh, add_duste=args.add_duste, add_jitter=args.add_jitter, add_agn=args.add_agn, fit_continuum=args.fit_continuum, remove_mips24=args.remove_mips24, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec, prior_file=args.prior_file)
     output['file_name'] = result_file_list[idx_file_considered[ii]].split('/')[-1]
     output['ID'] = ID
+    output['ra'] = ra
+    output['dec'] = dec
+    output['SN'] = sn
     file_name = path_res + "posterior_draws/" + ID + "_output.pkl"
     if os.path.exists(file_name):
         os.remove(file_name)
