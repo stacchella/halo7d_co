@@ -32,7 +32,7 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --restrict_dust_agn \
 --restrict_prior \
 --err_floor_phot=0.05 \
---err_floor_spec=0.001 \
+--err_floor_spec=0.01 \
 --S2N_cut=5.0 \
 --remove_mips24 \
 --fit_continuum \
