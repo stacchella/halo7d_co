@@ -25,7 +25,7 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
 --outfile="halo7d_parametric" \
 --init_run_file='/n/conroyfs1/stacchella/halo7d_co//results/param/posterior_draws/summary_param_run.pkl' \
---path_files_init_run='/n/conroyfs1/stacchella/halo7d_co//results/param/' \
+--path_files_init_run='/n/conroyfs1/stacchella/halo7d_co/results/param/' \
 --apply_chi_cut \
 --chi_cut_outlier=5.0 \
 --err_floor_phot=0.05 \

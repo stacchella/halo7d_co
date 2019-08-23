@@ -13,10 +13,10 @@
 ### constraints
 #SBATCH --constraint=intel
 ### Job name
-#SBATCH -J 'halo7dwos'
+#SBATCH -J 'paramwos'
 ### output and error logs
-#SBATCH -o halo7dwos_%a.out
-#SBATCH -e halo7dwos_%a.err
+#SBATCH -o paramwos_%a.out
+#SBATCH -e paramwos_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
@@ -24,6 +24,10 @@ source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
 --outfile="halo7d_parametric_wos" \
+--init_run_file='/n/conroyfs1/stacchella/halo7d_co//results/param/posterior_draws/summary_param_run.pkl' \
+--path_files_init_run='/n/conroyfs1/stacchella/halo7d_co/results/param/' \
+--apply_chi_cut \
+--chi_cut_outlier=5.0 \
 --err_floor_phot=0.05 \
 --err_floor_spec=0.001 \
 --S2N_cut=5.0 \
