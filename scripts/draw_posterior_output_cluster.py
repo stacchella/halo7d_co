@@ -29,9 +29,8 @@ filter_folder = path_wdir + '/data/filters/'
 # load parameter file
 
 sys.path.append(path_wdir + 'runs/')
-import param_file_sfh as param_file
-#import param_file_sfh_small as param_file
-#import param_file as param_file
+import param_file as param_file
+
 
 # pars args
 
@@ -40,10 +39,14 @@ parser.add_argument("--number_of_bins", type=int, help="number of cores")
 parser.add_argument("--idx_file_key", type=int, help="iteration variable")
 parser.add_argument("--path_results", type=str, help="path results")
 parser.add_argument("--ncalc", type=int, help="number of samples to draw from posterior")
-parser.add_argument('--prior_file', type=str, default=path_wdir+"data/halo7d_with_phot.fits",
+parser.add_argument('--init_run_file', type=str, default=path_wdir+'/results/param/posterior_draws/summary_param_run.pkl',
                     help="Name of file containing priors.")
 parser.add_argument('--non_param_sfh', action="store_true",
                     help="If set, fit non-parametric star-formation history model.")
+parser.add_argument('--restrict_dust_agn', action="store_true",
+                    help="If set, restrict AGN and dust emission parameters.")
+parser.add_argument('--restrict_prior', action="store_true",
+                    help="If set, restrict priors.")
 parser.add_argument('--add_jitter', action="store_true",
                     help="If set, jitter noise.")
 parser.add_argument('--fit_continuum', action="store_true",
@@ -84,16 +87,18 @@ def read_results(filename):
     return(res, obs, mod, sps)
 
 
-def investigate(file_input, ncalc, non_param, add_duste=False, add_neb=False, add_jitter=False, add_agn=False, fit_continuum=False, remove_mips24=False, switch_off_phot=False, switch_off_spec=False, prior_file=False):
+def investigate(file_input, ncalc, non_param, add_duste=False, add_neb=False, add_jitter=False,
+                add_agn=False, fit_continuum=False, remove_mips24=False, switch_off_phot=False,
+                switch_off_spec=False, init_run_file=False, restrict_dust_agn=False, restrict_prior=False):
     print file_input
     # read results
     res, obs, mod, sps = read_results(file_input)
-    mod = param_file.build_model(objid=obs['cat_row']+1, non_param_sfh=non_param, add_duste=add_duste, add_neb=add_neb, add_jitter=add_jitter, add_agn=add_agn, fit_continuum=fit_continuum, remove_mips24=remove_mips24, switch_off_phot=switch_off_phot, switch_off_spec=switch_off_spec, prior_file=prior_file)
+    mod = param_file.build_model(objid=obs['cat_row']+1, non_param_sfh=non_param, add_duste=add_duste, add_neb=add_neb, add_jitter=add_jitter, add_agn=add_agn, fit_continuum=fit_continuum, remove_mips24=remove_mips24, switch_off_phot=switch_off_phot, switch_off_spec=switch_off_spec, init_run_file=init_run_file, restrict_dust_agn=restrict_dust_agn, restrict_prior=restrict_prior)
     output = {}
     nsample = res['chain'].shape[0]
     sample_idx = np.random.choice(np.arange(nsample), size=ncalc, p=res['weights'], replace=False)
     output = toolbox_prospector.build_output(res, mod, sps, obs, sample_idx, ncalc=ncalc, non_param=non_param, shorten_spec=False, elines=None, abslines=None)
-    return(obs['id_halo7d'], obs['id_3dhst'], obs['RA'], obs['DEC'], obs['SN_calc'], output)
+    return(obs, output)
 
 
 def get_file_ids(number_of_bins, idx_file_key=1.0, **kwargs):
@@ -101,6 +106,16 @@ def get_file_ids(number_of_bins, idx_file_key=1.0, **kwargs):
     idx_bins_all_files = np.array_split(idx_all_files, number_of_bins)
     print idx_bins_all_files[int(float(idx_file_key))-1]
     return(idx_bins_all_files[int(float(idx_file_key))-1])  # -1 since slurm counts from 1 (and not from 0)
+
+
+def compute_chi2(obs, output):
+    spec_tot = output['obs']['spec_wEL']['q50']
+    spec_jitter = output['thetas']['spec_jitter']['q50']
+    spec_noise = obs['unc']*spec_jitter
+    mags = output['obs']['mags']['q50']
+    reduced_chi_square_phot = 1.0/np.sum(obs['phot_mask'])*np.sum((obs['maggies'][obs['phot_mask']]-mags[obs['phot_mask']])**2/obs['maggies_unc'][obs['phot_mask']]**2)
+    reduced_chi_square_spec = 1.0/np.sum(obs['mask'])*np.sum((obs['spectrum'][obs['mask']]-spec_tot[obs['mask']])**2/spec_noise[obs['mask']]**2)
+    return(reduced_chi_square_phot, reduced_chi_square_spec)
 
 
 # get files and iterate over them
@@ -114,13 +129,19 @@ print idx_file_considered
 
 for ii in range(len(idx_file_considered)):
     print result_file_list[idx_file_considered[ii]]
-    ID, id_3dhst, ra, dec, sn, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=args.non_param_sfh, add_duste=args.add_duste, add_jitter=args.add_jitter, add_agn=args.add_agn, fit_continuum=args.fit_continuum, remove_mips24=args.remove_mips24, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec, prior_file=args.prior_file)
+    obs, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=args.non_param_sfh,
+                              add_duste=args.add_duste, add_jitter=args.add_jitter, add_agn=args.add_agn, fit_continuum=args.fit_continuum,
+                              remove_mips24=args.remove_mips24, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec,
+                              restrict_dust_agn=args.restrict_dust_agn, restrict_prior=args.restrict_prior, init_run_file=args.init_run_file)
     output['file_name'] = result_file_list[idx_file_considered[ii]].split('/')[-1]
-    output['ID'] = ID
-    output['ra'] = ra
-    output['dec'] = dec
-    output['SN'] = sn
-    file_name = path_res + "posterior_draws/" + ID + "_output.pkl"
+    output['ID'] = obs['id_halo7d']
+    output['ra'] = obs['RA']
+    output['dec'] = obs['DEC']
+    output['SN'] = obs['SN_calc']
+    chi2_phot, chi2_spec = compute_chi2(obs, output)
+    output['chi2_phot'] = chi2_phot
+    output['chi2_spec'] = chi2_spec
+    file_name = path_res + "posterior_draws/" + obs['id_halo7d'] + "_output.pkl"
     if os.path.exists(file_name):
         os.remove(file_name)
     f = open(file_name, "w")

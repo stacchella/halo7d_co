@@ -29,7 +29,6 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --apply_chi_cut \
 --chi_cut_outlier=5.0 \
 --err_floor_phot=0.05 \
---err_floor_spec=0.001 \
 --S2N_cut=5.0 \
 --switch_off_spec \
 --add_duste \
