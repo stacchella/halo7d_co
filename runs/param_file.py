@@ -416,6 +416,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', in
     # Change the model parameter specifications based on some keyword arguments
     if add_duste:
         # Add dust emission (with fixed dust SED parameters)
+        model_params.update(TemplateLibrary["dust_emission"])
         if restrict_dust_agn:
             model_params['duste_gamma']['isfree'] = False
             model_params['duste_gamma']['init'] = summary_param[gal_id]['thetas']['duste_gamma']['q50']
@@ -424,7 +425,6 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', in
             model_params['duste_umin']['isfree'] = False
             model_params['duste_umin']['init'] = summary_param[gal_id]['thetas']['duste_umin']['q50']
         else:
-            model_params.update(TemplateLibrary["dust_emission"])
             model_params['duste_gamma']['isfree'] = True
             model_params['duste_gamma']['init'] = 1e-2
             model_params['duste_gamma']['prior'] = priors.LogUniform(mini=1e-3, maxi=1e-1)
@@ -435,13 +435,13 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', in
 
     if add_agn:
         # Add dust emission (with fixed dust SED parameters)
+        model_params.update(TemplateLibrary["agn"])
         if restrict_dust_agn:
             model_params['fagn']['isfree'] = False
             model_params['fagn']['init'] = summary_param[gal_id]['thetas']['fagn']['q50']
             model_params['agn_tau']['isfree'] = False
             model_params['agn_tau']['init'] = summary_param[gal_id]['thetas']['agn_tau']['q50']
         else:
-            model_params.update(TemplateLibrary["agn"])
             model_params['fagn']['isfree'] = True
             model_params['fagn']['prior'] = priors.LogUniform(mini=1e-5, maxi=3.0)
             model_params['agn_tau']['isfree'] = True
