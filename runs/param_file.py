@@ -11,6 +11,7 @@ from prospect.fitting import fit_model, lnprobfn
 from prospect.io import write_results as writer
 from prospect.likelihood import NoiseModel
 from prospect.likelihood.kernels import Uncorrelated
+from prospect.io import read_results as reader
 
 
 # define paths
@@ -88,7 +89,34 @@ def load_zp_offsets(field):
     return dat
 
 
-def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_floor_phot=0.001, err_floor_spec=0.001, S2N_cut=1.0, remove_mips24=False, switch_off_phot=False, switch_off_spec=False, **kwargs):
+def read_results(filename):
+    res, obs, mod = reader.results_from(filename)
+    # update data table
+    res['run_params']['data_table'] = path_wdir + 'data/halo7d_with_phot.fits'
+    mod = reader.get_model(res)
+    # update filters
+    filternames = [str(ii) for ii in obs['filters']]
+    obs['filters'] = load_filters(filternames, directory=filter_folder)
+    # load sps
+    sps = reader.get_sps(res)
+    return(res, obs, mod, sps)
+
+
+def get_mask_outlier(path_files, summary_param, gal_id, chi_cut_outlier):
+    output = summary_param[gal_id]
+    file_name = path_files + output['file_name']
+    res, obs, mod, sps = read_results(file_name)
+    spec_tot = output['obs']['spec_wEL']['q50']
+    spec_jitter = output['thetas']['spec_jitter']['q50']
+    spec_noise = obs['unc']*spec_jitter
+    chi_residual = (obs['spectrum']-spec_tot)/spec_noise
+    mask_chi = (np.abs(chi_residual) > chi_cut_outlier)
+    return(mask_chi)
+
+
+def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_floor_phot=0.01, err_floor_spec=0.01,
+              apply_chi_cut=False, init_run_file=path_wdir+'/results/param/posterior_draws/summary_param_run.pkl', chi_cut_outlier=5.0,
+              path_files_init_run=path_wdir+'/results/param/', S2N_cut=1.0, remove_mips24=False, switch_off_phot=False, switch_off_spec=False, **kwargs):
     """Load photometry from an ascii file.  Assumes the following columns:
     `objid`, `filterset`, [`mag0`,....,`magN`] where N >= 11.  The User should
     modify this function (including adding keyword arguments) to read in their
@@ -104,19 +132,15 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     :returns obs:
         Dictionary of observational data.
     """
-    # Writes your code here to read data.  Can use FITS, h5py, astropy.table,
-    # sqlite, whatever.
-    # e.g.:
-    # import astropy.io.fits as pyfits
-    # catalog = pyfits.getdata(phottable)
-    # Here we will read in an ascii catalog of magnitudes as a numpy structured
-    # array
+    # Read data
     from astropy.table import Table
+    import hickle
     catalog = Table.read(data_table)
     idx_cat = objid-1
-    # Here we are dynamically choosing which filters to use based on the object
-    # and a flag in the catalog.  Feel free to make this logic more (or less)
-    # complicated.
+    if apply_chi_cut:
+        summary_param = hickle.load(init_run_file)
+        mask_outliers = get_mask_outlier(path_files_init_run, summary_param, catalog[idx_cat]['ID'], chi_cut_outlier)
+    # Get filters and mags.
     filternames = []
     mags = []
     mags_err = []
@@ -180,11 +204,19 @@ def build_obs(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', err_
     obs['wavelength'] = catalog[idx_cat]['LAM'].data
     obs['spectrum'] = catalog[idx_cat]['FLUX'].data * conversion_factor
     obs['unc'] = np.clip(catalog[idx_cat]['ERR'].data * conversion_factor, catalog[idx_cat]['FLUX'].data * conversion_factor * err_floor_spec, np.inf)
-    obs['mask'] = (obs['wavelength'] < 9150.0) & (catalog[idx_cat]['ERR'].data < 6000.0) & \
-                  (obs['wavelength'] > (1.0 + catalog[idx_cat]['ZSPEC']) * 3525.0) & (obs['wavelength'] < (1.0 + catalog[idx_cat]['ZSPEC']) * 7500.0) & \
-                   ~((obs['wavelength'] > 6860.0) & (obs['wavelength'] < 6920.0)) & \
-                   ~((obs['wavelength'] > 7150.0) & (obs['wavelength'] < 7340.0)) & \
-                   ~((obs['wavelength'] > 7575.0) & (obs['wavelength'] < 7725.0))
+    if apply_chi_cut:
+        obs['mask'] = (obs['wavelength'] < 9150.0) & (catalog[idx_cat]['ERR'].data < 6000.0) & \
+                      (obs['wavelength'] > (1.0 + catalog[idx_cat]['ZSPEC']) * 3525.0) & (obs['wavelength'] < (1.0 + catalog[idx_cat]['ZSPEC']) * 7500.0) & \
+                       ~((obs['wavelength'] > 6860.0) & (obs['wavelength'] < 6920.0)) & \
+                       ~((obs['wavelength'] > 7150.0) & (obs['wavelength'] < 7340.0)) & \
+                       ~((obs['wavelength'] > 7575.0) & (obs['wavelength'] < 7725.0)) & \
+                       ~mask_outliers
+    else:
+        obs['mask'] = (obs['wavelength'] < 9150.0) & (catalog[idx_cat]['ERR'].data < 6000.0) & \
+                      (obs['wavelength'] > (1.0 + catalog[idx_cat]['ZSPEC']) * 3525.0) & (obs['wavelength'] < (1.0 + catalog[idx_cat]['ZSPEC']) * 7500.0) & \
+                       ~((obs['wavelength'] > 6860.0) & (obs['wavelength'] < 6920.0)) & \
+                       ~((obs['wavelength'] > 7150.0) & (obs['wavelength'] < 7340.0)) & \
+                       ~((obs['wavelength'] > 7575.0) & (obs['wavelength'] < 7725.0))
     # check S2N cut
     idx_w = (obs['wavelength'] > 7000.0) & (obs['wavelength'] < 9200.0)
     SN_calc = np.mean(catalog[idx_cat]['FLUX'].data[(obs['mask'] == 1) & idx_w]/catalog[idx_cat]['ERR'].data[(obs['mask'] == 1) & idx_w])/np.sqrt(np.mean(np.diff(obs['wavelength'])))
@@ -295,7 +327,8 @@ class ElineMargSEDModel(PolySedModel):
             return(eline_spec*1e-10)
 
 
-def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False,
+def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', init_run_file=path_wdir+'/results/param/posterior_draws/summary_param_run.pkl',
+                restrict_dust_agn=False, restrict_prior=False, non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False,
                 add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, **extras):
     """Construct a model.  This method defines a number of parameter
     specification dictionaries and uses them to initialize a
@@ -313,15 +346,27 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     #from prospect.models import transforms
     from astropy.table import Table
     from astropy.cosmology import Planck15 as cosmo
+    import hickle
+
     # read in data table
     catalog = Table.read(data_table)
     idx_cat = objid-1
+    gal_id = catalog[idx_cat]['ID']
+
+    # read in prior file
+    summary_param = hickle.load(init_run_file)
 
     # get SFH template
     if non_param_sfh:
-        t_univ = cosmo.age(catalog[idx_cat]['ZSPEC']).value
+        t_univ = cosmo.age(summary_param[gal_id]['thetas']['zred']['q50']).value
         model_params = TemplateLibrary["continuity_sfh"]
-        model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=7)
+        model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=8)
+        new_t = np.log10(0.5*(10**model_params['agebins']['init'][-1][-1]+10**model_params['agebins']['init'][-2][0]))
+        model_params['agebins']['init'][-1][0] = new_t
+        model_params['agebins']['init'][-2][-1] = new_t
+        #t_univ = cosmo.age(catalog[idx_cat]['ZSPEC']).value
+        #model_params = TemplateLibrary["continuity_sfh"]
+        #model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=7)
     else:
         model_params = TemplateLibrary["parametric_sfh"]
         model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
@@ -332,9 +377,14 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     model_params["mass"]["prior"] = priors.LogUniform(mini=1e10, maxi=1e12)
     model_params["logzsol"]["prior"] = priors.TopHat(mini=-1.0, maxi=0.3)
     model_params["dust_type"]["init"] = 4
-    model_params["dust_index"] = {"N": 1, "isfree": True,
-                                  "init": 0.0, "units": "power-law multiplication of Calzetti",
-                                  "prior": priors.TopHat(mini=-2.0, maxi=0.5)}
+    if restrict_prior:
+        model_params["dust_index"] = {"N": 1, "isfree": True,
+                                      "init": summary_param[gal_id]['thetas']['dust_index']['q50'], "units": "power-law multiplication of Calzetti",
+                                      "prior": priors.ClippedNormal(mean=summary_param[gal_id]['thetas']['dust_index']['q50'], sigma=np.abs(summary_param[gal_id]['thetas']['dust_index']['q84']-summary_param[gal_id]['thetas']['dust_index']['q50']), mini=-2.0, maxi=0.5)}
+    else:
+        model_params["dust_index"] = {"N": 1, "isfree": True,
+                                      "init": 0.0, "units": "power-law multiplication of Calzetti",
+                                      "prior": priors.TopHat(mini=-2.0, maxi=0.5)}
 
     # fit for redshift
     model_params["zred"]['isfree'] = True
@@ -366,22 +416,36 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
     # Change the model parameter specifications based on some keyword arguments
     if add_duste:
         # Add dust emission (with fixed dust SED parameters)
-        model_params.update(TemplateLibrary["dust_emission"])
-        model_params['duste_gamma']['isfree'] = True
-        model_params['duste_gamma']['init'] = 1e-2
-        model_params['duste_gamma']['prior'] = priors.LogUniform(mini=1e-3, maxi=1e-1)
-        model_params['duste_qpah']['isfree'] = True
-        model_params['duste_qpah']['prior'] = priors.TopHat(mini=0.5, maxi=7.0)
-        model_params['duste_umin']['isfree'] = True
-        model_params['duste_umin']['prior'] = priors.ClippedNormal(mean=1.0, sigma=0.5, mini=0.1, maxi=25)
+        if restrict_dust_agn:
+            model_params['duste_gamma']['isfree'] = False
+            model_params['duste_gamma']['init'] = summary_param[gal_id]['thetas']['duste_gamma']['q50']
+            model_params['duste_qpah']['isfree'] = False
+            model_params['duste_qpah']['init'] = summary_param[gal_id]['thetas']['duste_qpah']['q50']
+            model_params['duste_umin']['isfree'] = False
+            model_params['duste_umin']['init'] = summary_param[gal_id]['thetas']['duste_umin']['q50']
+        else:
+            model_params.update(TemplateLibrary["dust_emission"])
+            model_params['duste_gamma']['isfree'] = True
+            model_params['duste_gamma']['init'] = 1e-2
+            model_params['duste_gamma']['prior'] = priors.LogUniform(mini=1e-3, maxi=1e-1)
+            model_params['duste_qpah']['isfree'] = True
+            model_params['duste_qpah']['prior'] = priors.TopHat(mini=0.5, maxi=7.0)
+            model_params['duste_umin']['isfree'] = True
+            model_params['duste_umin']['prior'] = priors.ClippedNormal(mean=1.0, sigma=0.5, mini=0.1, maxi=25)
 
     if add_agn:
         # Add dust emission (with fixed dust SED parameters)
-        model_params.update(TemplateLibrary["agn"])
-        model_params['fagn']['isfree'] = True
-        model_params['fagn']['prior'] = priors.LogUniform(mini=1e-5, maxi=3.0)
-        model_params['agn_tau']['isfree'] = True
-        model_params['agn_tau']['prior'] = priors.LogUniform(mini=5.0, maxi=150.)
+        if restrict_dust_agn:
+            model_params['fagn']['isfree'] = False
+            model_params['fagn']['init'] = summary_param[gal_id]['thetas']['fagn']['q50']
+            model_params['agn_tau']['isfree'] = False
+            model_params['agn_tau']['init'] = summary_param[gal_id]['thetas']['agn_tau']['q50']
+        else:
+            model_params.update(TemplateLibrary["agn"])
+            model_params['fagn']['isfree'] = True
+            model_params['fagn']['prior'] = priors.LogUniform(mini=1e-5, maxi=3.0)
+            model_params['agn_tau']['isfree'] = True
+            model_params['agn_tau']['prior'] = priors.LogUniform(mini=5.0, maxi=150.)
 
     if add_neb:
         # Add nebular emission (with fixed parameters)
@@ -393,8 +457,9 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', no
 
     if fit_continuum:
         # order of polynomial that's fit to spectrum
+        polyorder_estimate = int(np.clip(np.round((np.min([7500*(catalog[idx_cat]['ZSPEC']+1), 9150.0])-np.max([3525.0*(catalog[idx_cat]['ZSPEC']+1), 6000.0]))/(catalog[idx_cat]['ZSPEC']+1)*100), 10, 30))
         model_params['polyorder'] = {'N': 1,
-                                     'init': 14,
+                                     'init': polyorder_estimate,
                                      'isfree': False}
         # fit for normalization of spectrum
         model_params['spec_norm'] = {'N': 1,
@@ -559,8 +624,26 @@ if __name__ == '__main__':
     # - Parser with default arguments -
     parser = prospect_args.get_parser()
     # - Add custom arguments -
+    parser.add_argument('--data_table', type=str, default=path_wdir+"data/halo7d_with_phot.fits",
+                        help="Names of table from which to get photometry.")
+    parser.add_argument('--init_run_file', type=str, default=path_wdir+'/results/param/posterior_draws/summary_param_run.pkl',
+                        help="Name of file containing initial run (for priors and outliers).")
+    parser.add_argument('--path_files_init_run', type=str, default=path_wdir+"/results/param/",
+                        help="Name of file containing initial run (for priors and outliers).")
+    parser.add_argument('--objid', type=int, default=0,
+                        help="Zero-index row number in the table to fit.")
+    parser.add_argument('--S2N_cut', type=np.float, default=5.0,
+                        help="Signal-to-noise cut applied to sample.")
     parser.add_argument('--non_param_sfh', action="store_true",
                         help="If set, fit non-parametric star-formation history model.")
+    parser.add_argument('--apply_chi_cut', action="store_true",
+                        help="If set, applies chi^2 outliers from inital run.")
+    parser.add_argument('--chi_cut_outlier', type=np.float, default=5.0,
+                        help="Chi^2 cut to identify outliers.")
+    parser.add_argument('--restrict_dust_agn', action="store_true",
+                        help="If set, restrict AGN and dust emission parameters.")
+    parser.add_argument('--restrict_prior', action="store_true",
+                        help="If set, restrict priors.")
     parser.add_argument('--add_lsf', action="store_true",
                         help="If set, add realistic instrumental dispersion.")
     parser.add_argument('--add_neb', action="store_true",
@@ -573,16 +656,10 @@ if __name__ == '__main__':
                         help="If set, add agn emission to the model.")
     parser.add_argument('--remove_mips24', action="store_true",
                         help="If set, removes MIPS 24um flux.")
-    parser.add_argument('--data_table', type=str, default=path_wdir+"data/halo7d_with_phot.fits",
-                        help="Names of table from which to get photometry.")
-    parser.add_argument('--objid', type=int, default=0,
-                        help="Zero-index row number in the table to fit.")
     parser.add_argument('--err_floor_phot', type=np.float, default=0.001,
                         help="Error floor for photometry.")
     parser.add_argument('--err_floor_spec', type=np.float, default=0.001,
                         help="Error floor for spectroscopy.")
-    parser.add_argument('--S2N_cut', type=np.float, default=5.0,
-                        help="Signal-to-noise cut applied to sample.")
     parser.add_argument('--add_jitter', action="store_true",
                         help="If set, jitter noise.")
     parser.add_argument('--switch_off_spec', action="store_true",
