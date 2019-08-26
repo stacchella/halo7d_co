@@ -108,13 +108,19 @@ def get_file_ids(number_of_bins, idx_file_key=1.0, **kwargs):
     return(idx_bins_all_files[int(float(idx_file_key))-1])  # -1 since slurm counts from 1 (and not from 0)
 
 
-def compute_chi2(obs, output):
-    spec_tot = output['obs']['spec_wEL']['q50']
-    spec_jitter = output['thetas']['spec_jitter']['q50']
-    spec_noise = obs['unc']*spec_jitter
-    mags = output['obs']['mags']['q50']
-    reduced_chi_square_phot = 1.0/np.sum(obs['phot_mask'])*np.sum((obs['maggies'][obs['phot_mask']]-mags[obs['phot_mask']])**2/obs['maggies_unc'][obs['phot_mask']]**2)
-    reduced_chi_square_spec = 1.0/np.sum(obs['mask'])*np.sum((obs['spectrum'][obs['mask']]-spec_tot[obs['mask']])**2/spec_noise[obs['mask']]**2)
+def compute_chi2(obs, output, switch_off_phot, switch_off_spec):
+    if switch_off_spec:
+        reduced_chi_square_spec = -99.0
+    else:
+        spec_tot = output['obs']['spec_wEL']['q50']
+        spec_jitter = output['thetas']['spec_jitter']['q50']
+        spec_noise = obs['unc']*spec_jitter
+        reduced_chi_square_spec = 1.0/np.sum(obs['mask'])*np.sum((obs['spectrum'][obs['mask']]-spec_tot[obs['mask']])**2/spec_noise[obs['mask']]**2)
+    if switch_off_phot:
+        reduced_chi_square_phot = -99.0
+    else:
+        mags = output['obs']['mags']['q50']
+        reduced_chi_square_phot = 1.0/np.sum(obs['phot_mask'])*np.sum((obs['maggies'][obs['phot_mask']]-mags[obs['phot_mask']])**2/obs['maggies_unc'][obs['phot_mask']]**2)
     return(reduced_chi_square_phot, reduced_chi_square_spec)
 
 
@@ -138,7 +144,7 @@ for ii in range(len(idx_file_considered)):
     output['ra'] = obs['RA']
     output['dec'] = obs['DEC']
     output['SN'] = obs['SN_calc']
-    chi2_phot, chi2_spec = compute_chi2(obs, output)
+    chi2_phot, chi2_spec = compute_chi2(obs, output, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec)
     output['chi2_phot'] = chi2_phot
     output['chi2_spec'] = chi2_spec
     file_name = path_res + "posterior_draws/" + obs['id_halo7d'] + "_output.pkl"
