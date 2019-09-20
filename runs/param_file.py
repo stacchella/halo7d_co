@@ -328,7 +328,7 @@ class ElineMargSEDModel(PolySedModel):
 
 
 def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', init_run_file=path_wdir+'/results/param/posterior_draws/summary_param_run.pkl',
-                restrict_dust_agn=False, restrict_prior=False, non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False,
+                restrict_dust_agn=False, restrict_prior=False, non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False, n_bins_sfh=8,
                 add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, **extras):
     """Construct a model.  This method defines a number of parameter
     specification dictionaries and uses them to initialize a
@@ -360,10 +360,19 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', in
     if non_param_sfh:
         t_univ = cosmo.age(summary_param[gal_id]['thetas']['zred']['q50']).value
         model_params = TemplateLibrary["continuity_sfh"]
-        model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=8)
-        new_t = np.log10(0.5*(10**model_params['agebins']['init'][-1][-1]+10**model_params['agebins']['init'][-2][0]))
-        model_params['agebins']['init'][-1][0] = new_t
-        model_params['agebins']['init'][-2][-1] = new_t
+        if (n_bins_sfh == 8):
+            model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=n_bins_sfh)
+            new_t = np.log10(0.5*(10**model_params['agebins']['init'][-1][-1]+10**model_params['agebins']['init'][-2][0]))
+            model_params['agebins']['init'][-1][0] = new_t
+            model_params['agebins']['init'][-2][-1] = new_t
+        else:
+            model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=n_bins_sfh)
+            tbinmax = 0.85 * t_univ * 1e9
+            lim1, lim2, lim3, lim4 = 7.4772, 8.0, 8.5, 9.0
+            #agelims = [0, lim1, lim2, lim3] + np.linspace(lim4, np.log10(tbinmax), n_bins_sfh-4).tolist() + [np.log10(t_univ*1e9)]
+            agelims = [0, lim1, lim2, lim3] + np.log10(np.linspace(10**lim4, tbinmax, n_bins_sfh-4)).tolist() + [np.log10(t_univ*1e9)]
+            agebins = np.array([agelims[:-1], agelims[1:]])
+            model_params['agebins']['init'] = agebins.T
         #t_univ = cosmo.age(catalog[idx_cat]['ZSPEC']).value
         #model_params = TemplateLibrary["continuity_sfh"]
         #model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=7)
@@ -636,6 +645,8 @@ if __name__ == '__main__':
                         help="Signal-to-noise cut applied to sample.")
     parser.add_argument('--non_param_sfh', action="store_true",
                         help="If set, fit non-parametric star-formation history model.")
+    parser.add_argument('--n_bins_sfh', type=int, default=8,
+                        help="Number of bins for SFH (non parametric).")
     parser.add_argument('--apply_chi_cut', action="store_true",
                         help="If set, applies chi^2 outliers from inital run.")
     parser.add_argument('--chi_cut_outlier', type=np.float, default=5.0,
