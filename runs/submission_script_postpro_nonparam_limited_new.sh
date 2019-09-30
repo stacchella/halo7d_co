@@ -11,10 +11,10 @@
 ### memory per cpu, in MB
 #SBATCH --mem-per-cpu=4000
 ### Job name
-#SBATCH -J 'poprparamwo24'
+#SBATCH -J 'poprnplimited_new'
 ### output and error logs
-#SBATCH -o poprparamwo24_%a.out
-#SBATCH -e poprparamwo24_%a.err
+#SBATCH -o poprnplimited_%a.out
+#SBATCH -e poprnplimited_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
@@ -22,10 +22,13 @@ source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/scripts/draw_posterior_output_cluster.py \
 --number_of_bins=200 \
 --idx_file_key="${SLURM_ARRAY_TASK_ID}" \
---path_results="/n/conroyfs1/stacchella/halo7d_co/results/param_wo24/" \
+--path_results="/n/conroyfs1/stacchella/halo7d_co/results/nonparam_limited_new/" \
 --ncalc=1000 \
+--non_param_sfh \
+--n_bins_sfh=10 \
 --add_jitter \
 --fit_continuum \
 --add_duste \
 --add_agn \
---remove_mips24
+--restrict_dust_agn \
+--restrict_prior

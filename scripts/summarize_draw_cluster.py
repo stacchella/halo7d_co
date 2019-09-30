@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 # define paths
 
-path_results = '/n/conroyfs1/stacchella/halo7d_co/results/param/posterior_draws/'
+path_results = '/n/conroyfs1/stacchella/halo7d_co/results/param_new/posterior_draws/'
 name_output_file = 'summary_param_run.pkl'
 
 result_file_list = glob.glob(path_results + '*_output.pkl')
