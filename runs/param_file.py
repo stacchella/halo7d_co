@@ -21,7 +21,16 @@ filter_folder = path_wdir + '/data/filters/'
 filter_lsf = path_wdir + '/data/galaxy_LSF_output/'
 
 
-# emission line function
+# emission line functions
+
+line_fit_name = np.array(['Ha', 'Hb', 'Hg', 'Hd', 'He', 'H8', 'H9', 'H10', 'HeI', '[NII]', '[NII]', '[OII]', '[OII]', '[OIII]', '[OIII]', '[NeIII]'])
+line_fit_rest_wave = np.array([6564.61, 4862.69, 4341.69, 4102.92, 3971.19, 3890.15, 3836.48, 3798.98, 3889.0, 6585.27, 6549.86, 3727.09, 3729.88, 5008.24, 4960.30, 3869.81])
+
+doublet_info = {}
+doublet_info['[OII]'] = {'w1': 3727.09, 'w2': 3729.88, 'ratio': 1.0}
+doublet_info['[OIII]'] = {'w1': 4960.30, 'w2': 5008.24, 'ratio': 0.33}
+doublet_info['[NII]'] = {'w1': 6549.86, 'w2': 6585.27, 'ratio': 0.33}
+
 
 def get_boxed_mask(wavelength, mask):
     mask_val = ~mask
@@ -45,15 +54,7 @@ def get_boxed_mask(wavelength, mask):
     return(mask_blocks)
 
 
-doublet_info = {}
-doublet_info['[OII]'] = {'w1': 3727.09, 'w2': 3729.88, 'ratio': 1.0}
-doublet_info['[OIII]'] = {'w1': 4960.30, 'w2': 5008.24, 'ratio': 0.33}
-doublet_info['[NII]'] = {'w1': 6549.86, 'w2': 6585.27, 'ratio': 0.33}
-
-
 def get_lines_to_fit(wavelength, mask, redshift):
-    line_fit_name = np.array(['Ha', 'Hb', 'Hg', 'Hd', 'He', 'H8', 'H9', 'H10', 'HeI', '[NII]', '[NII]', '[OII]', '[OII]', '[OIII]', '[OIII]', '[NeIII]'])
-    line_fit_rest_wave = np.array([6564.61, 4862.69, 4341.69, 4102.92, 3971.19, 3890.15, 3836.48, 3798.98, 3889.0, 6585.27, 6549.86, 3727.09, 3729.88, 5008.24, 4960.30, 3869.81])
     # get lines in wavelength range
     idx_line1 = (np.min(wavelength[mask]) < (redshift+1.0)*line_fit_rest_wave) & (np.max(wavelength[mask]) > (redshift+1.0)*line_fit_rest_wave)
     # mask lines in masked region
@@ -70,8 +71,10 @@ def get_lines_to_fit(wavelength, mask, redshift):
     return(line_fit_name[idx_line], line_fit_rest_wave[idx_line])
 
 
+# function for ZP offsets
+
 def load_zp_offsets(field):
-    # load skelton zp offsets
+    # load ZP offsets from Skelton+, a la Leja
     filename = path_wdir+'data/zp_offsets_tbl11_skel14.txt'
     with open(filename, 'r') as f:
         for jj in range(1):
@@ -89,6 +92,8 @@ def load_zp_offsets(field):
     return dat
 
 
+# function to read previous results (to estimate narrower prior)
+
 def read_results(filename):
     res, obs, mod = reader.results_from(filename)
     # update data table
@@ -102,6 +107,8 @@ def read_results(filename):
     return(res, obs, mod, sps)
 
 
+# mask outliers
+
 def get_mask_outlier(path_files, summary_param, gal_id, chi_cut_outlier):
     output = summary_param[gal_id]
     file_name = path_files + output['file_name']
@@ -114,7 +121,9 @@ def get_mask_outlier(path_files, summary_param, gal_id, chi_cut_outlier):
     return(mask_chi)
 
 
-def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_floor_phot=0.01, err_floor_spec=0.01,
+# function to build obs dictionary
+
+def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_floor_phot=0.05, err_floor_spec=0.01, remove_zp_offsets=True,
               apply_chi_cut=False, init_run_file=path_wdir+'/results/param/posterior_draws/summary_param_run.pkl', chi_cut_outlier=5.0,
               path_files_init_run=path_wdir+'/results/param/', S2N_cut=1.0, remove_mips24=False, switch_off_phot=False, switch_off_spec=False, **kwargs):
     """Load photometry from an ascii file.  Assumes the following columns:
@@ -137,6 +146,7 @@ def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_fl
     import hickle
     catalog = Table.read(data_table)
     idx_cat = objid-1
+    # mask outliers (based on previous run)
     if apply_chi_cut:
         summary_param = hickle.load(init_run_file)
         mask_outliers = get_mask_outlier(path_files_init_run, summary_param, catalog[idx_cat]['ID'], chi_cut_outlier)
@@ -170,10 +180,16 @@ def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_fl
     mags_err = mags_err[choice_finite]
     # add error from zeropoint offsets in quadrature
     zp_offsets = load_zp_offsets(field_name_filters.upper())
-    band_names = np.array([x['Band'].lower()+'_'+x['Field'].lower() for x in zp_offsets])
+    band_names = np.array([x['Band'].lower() + '_' + x['Field'].lower() for x in zp_offsets])
     for ii, f in enumerate(filternames):
         match = (band_names == f)
         if match.sum():
+            if remove_zp_offsets:
+                hst_bands = ['f435w', 'f606w', 'f606wcand', 'f775w', 'f814w',
+                             'f814wcand', 'f850lp', 'f850lpcand', 'f125w', 'f140w', 'f160w']
+                if f.split('_')[0] not in hst_bands:
+                    mags[ii] = mags[ii] / zp_offsets[match]['Flux-Correction'][0]
+                    mags_err[ii] = mags_err[ii] / zp_offsets[match]['Flux-Correction'][0]
             mags_err[ii] = ((mags_err[ii]**2) + (mags[ii]*(1-zp_offsets[match]['Flux-Correction'][0]))**2)**0.5
     # Build output dictionary.
     obs = {}
@@ -263,6 +279,8 @@ def gauss_doublet(x, w1, a1, sigma, w2, ratio):
     return(gauss(x, w1, a1, sigma) + gauss(x, w2, ratio*a1, sigma))
 
 
+# rewrite mean_model function of class in order to fit EL
+
 class ElineMargSEDModel(PolySedModel):
 
     def mean_model(self, theta, obs, sps=None, EL_info=False, **extras):
@@ -327,6 +345,8 @@ class ElineMargSEDModel(PolySedModel):
             return(eline_spec*1e-10)
 
 
+# function to build model dictionary
+
 def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', init_run_file=path_wdir+'/results/param/posterior_draws/summary_param_run.pkl',
                 restrict_dust_agn=False, restrict_prior=False, non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False, n_bins_sfh=8,
                 add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, **extras):
@@ -365,6 +385,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', in
             new_t = np.log10(0.5*(10**model_params['agebins']['init'][-1][-1]+10**model_params['agebins']['init'][-2][0]))
             model_params['agebins']['init'][-1][0] = new_t
             model_params['agebins']['init'][-2][-1] = new_t
+            model_params["logmass"]["prior"] = priors.TopHat(mini=10, maxi=12.0)
         else:
             model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=n_bins_sfh)
             tbinmax = 0.85 * t_univ * 1e9
@@ -373,6 +394,7 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', in
             agelims = [0, lim1, lim2, lim3] + np.log10(np.linspace(10**lim4, tbinmax, n_bins_sfh-4)).tolist() + [np.log10(t_univ*1e9)]
             agebins = np.array([agelims[:-1], agelims[1:]])
             model_params['agebins']['init'] = agebins.T
+            model_params["logmass"]["prior"] = priors.TopHat(mini=10, maxi=12.0)
         #t_univ = cosmo.age(catalog[idx_cat]['ZSPEC']).value
         #model_params = TemplateLibrary["continuity_sfh"]
         #model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=7)
@@ -380,10 +402,9 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', in
         model_params = TemplateLibrary["parametric_sfh"]
         model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
         model_params["tage"]["prior"] = priors.TopHat(mini=0.0, maxi=cosmo.age(catalog[idx_cat]['ZSPEC']).value)
-
+        model_params["mass"]["prior"] = priors.LogUniform(mini=1e10, maxi=1e12)
     # adjust priors
     model_params["dust2"]["prior"] = priors.TopHat(mini=0.0, maxi=3.0)
-    model_params["mass"]["prior"] = priors.LogUniform(mini=1e10, maxi=1e12)
     model_params["logzsol"]["prior"] = priors.TopHat(mini=-1.0, maxi=0.3)
     model_params["dust_type"]["init"] = 4
     if restrict_prior:
@@ -701,3 +722,4 @@ if __name__ == '__main__':
         hfile.close()
     except(AttributeError):
         pass
+
