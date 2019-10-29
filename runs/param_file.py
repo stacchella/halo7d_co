@@ -656,6 +656,8 @@ if __name__ == '__main__':
     # - Add custom arguments -
     parser.add_argument('--data_table', type=str, default=path_wdir+"data/halo7d_with_phot.fits",
                         help="Names of table from which to get photometry.")
+    parser.add_argument('--outfile', type=str, default='output',
+                        help="Names of output files.")
     parser.add_argument('--init_run_file', type=str, default=path_wdir+'/results/param/posterior_draws/summary_param_run.pkl',
                         help="Name of file containing initial run (for priors and outliers).")
     parser.add_argument('--path_files_init_run', type=str, default=path_wdir+"/results/param/",

@@ -18,6 +18,7 @@
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
+module load python/2.7.14-fasrc01
 source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/scripts/draw_posterior_output_cluster.py \
 --number_of_bins=200 \
