@@ -24,21 +24,22 @@ module load python/2.7.14-fasrc01
 source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
---outfile="halo7d_nonparametric_limited_wos" \
---init_run_file='/n/conroyfs1/stacchella/halo7d_co//results/param/posterior_draws/summary_param_run.pkl' \
---path_files_init_run='/n/conroyfs1/stacchella/halo7d_co/results/param/' \
+--outfile="halo7d_nonparametric_limited_8" \
+--init_run_file='/n/conroyfs1/stacchella/halo7d_co//results/param_init/posterior_draws/summary_param_init_run.pkl' \
+--path_files_init_run='/n/conroyfs1/stacchella/halo7d_co/results/param_init/' \
 --apply_chi_cut \
 --chi_cut_outlier=5.0 \
 --non_param_sfh \
+--n_bins_sfh=10 \
 --restrict_dust_agn \
 --restrict_prior \
 --err_floor_phot=0.05 \
 --err_floor_spec=0.01 \
 --S2N_cut=5.0 \
---remove_mips24 \
+--fit_continuum \
 --add_duste \
 --add_agn \
---switch_off_spec \
+--add_jitter \
 --dynesty \
 --nested_method="rwalk" \
 --nlive_batch=100 \

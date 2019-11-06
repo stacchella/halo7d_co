@@ -24,9 +24,9 @@ module load python/2.7.14-fasrc01
 source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
---outfile="halo7d_nonparametric_limited_new" \
---init_run_file='/n/conroyfs1/stacchella/halo7d_co//results/param/posterior_draws/summary_param_run.pkl' \
---path_files_init_run='/n/conroyfs1/stacchella/halo7d_co/results/param/' \
+--outfile="halo7d_nonparametric_limited_10" \
+--init_run_file='/n/conroyfs1/stacchella/halo7d_co//results/param_init/posterior_draws/summary_param_init_run.pkl' \
+--path_files_init_run='/n/conroyfs1/stacchella/halo7d_co/results/param_init/' \
 --apply_chi_cut \
 --chi_cut_outlier=5.0 \
 --non_param_sfh \
