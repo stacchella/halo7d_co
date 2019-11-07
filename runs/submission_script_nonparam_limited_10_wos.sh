@@ -13,10 +13,10 @@
 ### constraints
 #SBATCH --constraint=intel
 ### Job name
-#SBATCH -J 'nplim'
+#SBATCH -J 'nplim10wos'
 ### output and error logs
-#SBATCH -o nplim_%a.out
-#SBATCH -e nplim_%a.err
+#SBATCH -o nplim10wos_%a.out
+#SBATCH -e nplim10wos_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
