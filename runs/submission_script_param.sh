@@ -13,10 +13,10 @@
 ### constraints
 #SBATCH --constraint=intel
 ### Job name
-#SBATCH -J 'halo7d2'
+#SBATCH -J 'param'
 ### output and error logs
-#SBATCH -o halo7d2_%a.out
-#SBATCH -e halo7d2_%a.err
+#SBATCH -o param_%a.out
+#SBATCH -e param_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
