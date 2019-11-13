@@ -39,7 +39,7 @@ parser.add_argument("--number_of_bins", type=int, help="number of cores")
 parser.add_argument("--idx_file_key", type=int, help="iteration variable")
 parser.add_argument("--path_results", type=str, help="path results")
 parser.add_argument("--ncalc", type=int, help="number of samples to draw from posterior")
-parser.add_argument('--init_run_file', type=str, default=path_wdir+'/results/param/posterior_draws/summary_param_run.pkl',
+parser.add_argument('--init_run_file', type=str, default=path_wdir+'/results/param_init/posterior_draws/summary_param_init_run.pkl',
                     help="Name of file containing priors.")
 parser.add_argument('--non_param_sfh', action="store_true",
                     help="If set, fit non-parametric star-formation history model.")
