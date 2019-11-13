@@ -11,10 +11,10 @@
 ### memory per cpu, in MB
 #SBATCH --mem-per-cpu=4000
 ### Job name
-#SBATCH -J 'poprparamwos'
+#SBATCH -J 'pp_param_wos'
 ### output and error logs
-#SBATCH -o poprparamwos_%a.out
-#SBATCH -e poprparamwos_%a.err
+#SBATCH -o pp_param_wos_%a.out
+#SBATCH -e pp_param_wos_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu

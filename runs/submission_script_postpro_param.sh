@@ -11,10 +11,10 @@
 ### memory per cpu, in MB
 #SBATCH --mem-per-cpu=4000
 ### Job name
-#SBATCH -J 'poprparam'
+#SBATCH -J 'pp_param'
 ### output and error logs
-#SBATCH -o poprparam_%a.out
-#SBATCH -e poprparam_%a.err
+#SBATCH -o pp_param_%a.out
+#SBATCH -e pp_param_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
@@ -22,7 +22,7 @@ source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/scripts/draw_posterior_output_cluster.py \
 --number_of_bins=200 \
 --idx_file_key="${SLURM_ARRAY_TASK_ID}" \
---path_results="/n/conroyfs1/stacchella/halo7d_co/results/param_new/" \
+--path_results="/n/conroyfs1/stacchella/halo7d_co/results/param/" \
 --ncalc=1000 \
 --add_jitter \
 --fit_continuum \
