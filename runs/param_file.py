@@ -124,8 +124,8 @@ def get_mask_outlier(path_files, summary_param, gal_id, chi_cut_outlier):
 # function to build obs dictionary
 
 def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_floor_phot=0.05, err_floor_spec=0.01, remove_zp_offsets=True,
-              apply_chi_cut=False, init_run_file=path_wdir+'/results/param/posterior_draws/summary_param_run.pkl', chi_cut_outlier=5.0,
-              path_files_init_run=path_wdir+'/results/param/', S2N_cut=1.0, remove_mips24=False, switch_off_phot=False, switch_off_spec=False, **kwargs):
+              apply_chi_cut=False, init_run_file=path_wdir+'/results/param_init/posterior_draws/summary_param_init_run.pkl', chi_cut_outlier=5.0,
+              path_files_init_run=path_wdir+'/results/param_init/', S2N_cut=1.0, remove_mips24=False, switch_off_phot=False, switch_off_spec=False, **kwargs):
     """Load photometry from an ascii file.  Assumes the following columns:
     `objid`, `filterset`, [`mag0`,....,`magN`] where N >= 11.  The User should
     modify this function (including adding keyword arguments) to read in their
@@ -347,7 +347,7 @@ class ElineMargSEDModel(PolySedModel):
 
 # function to build model dictionary
 
-def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', init_run_file=path_wdir+'/results/param/posterior_draws/summary_param_run.pkl',
+def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', init_run_file=path_wdir+'/results/param_init/posterior_draws/summary_param_init_run.pkl',
                 restrict_dust_agn=False, restrict_prior=False, non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False, n_bins_sfh=8,
                 add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, **extras):
     """Construct a model.  This method defines a number of parameter
@@ -656,9 +656,9 @@ if __name__ == '__main__':
     # - Add custom arguments -
     parser.add_argument('--data_table', type=str, default=path_wdir+"data/halo7d_with_phot.fits",
                         help="Names of table from which to get photometry.")
-    parser.add_argument('--init_run_file', type=str, default=path_wdir+'/results/param/posterior_draws/summary_param_run.pkl',
+    parser.add_argument('--init_run_file', type=str, default=path_wdir+'/results/param_init/posterior_draws/summary_param_init_run.pkl',
                         help="Name of file containing initial run (for priors and outliers).")
-    parser.add_argument('--path_files_init_run', type=str, default=path_wdir+"/results/param/",
+    parser.add_argument('--path_files_init_run', type=str, default=path_wdir+"/results/param_init/",
                         help="Name of file containing initial run (for priors and outliers).")
     parser.add_argument('--objid', type=int, default=0,
                         help="Zero-index row number in the table to fit.")
