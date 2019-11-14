@@ -380,21 +380,21 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', in
     if non_param_sfh:
         t_univ = cosmo.age(summary_param[gal_id]['thetas']['zred']['q50']).value
         model_params = TemplateLibrary["continuity_sfh"]
-        if (n_bins_sfh == 8):
-            model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=n_bins_sfh)
-            new_t = np.log10(0.5*(10**model_params['agebins']['init'][-1][-1]+10**model_params['agebins']['init'][-2][0]))
-            model_params['agebins']['init'][-1][0] = new_t
-            model_params['agebins']['init'][-2][-1] = new_t
-            model_params["logmass"]["prior"] = priors.TopHat(mini=10, maxi=12.0)
-        else:
-            model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=n_bins_sfh)
-            tbinmax = 0.85 * t_univ * 1e9
-            lim1, lim2, lim3, lim4 = 7.4772, 8.0, 8.5, 9.0
-            #agelims = [0, lim1, lim2, lim3] + np.linspace(lim4, np.log10(tbinmax), n_bins_sfh-4).tolist() + [np.log10(t_univ*1e9)]
-            agelims = [0, lim1, lim2, lim3] + np.log10(np.linspace(10**lim4, tbinmax, n_bins_sfh-4)).tolist() + [np.log10(t_univ*1e9)]
-            agebins = np.array([agelims[:-1], agelims[1:]])
-            model_params['agebins']['init'] = agebins.T
-            model_params["logmass"]["prior"] = priors.TopHat(mini=10, maxi=12.0)
+        #if (n_bins_sfh == 8):
+        #    model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=n_bins_sfh)
+        #    new_t = np.log10(0.5*(10**model_params['agebins']['init'][-1][-1]+10**model_params['agebins']['init'][-2][0]))
+        #    model_params['agebins']['init'][-1][0] = new_t
+        #    model_params['agebins']['init'][-2][-1] = new_t
+        #    model_params["logmass"]["prior"] = priors.TopHat(mini=10, maxi=12.0)
+        #else:
+        model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=n_bins_sfh)
+        tbinmax = 0.85 * t_univ * 1e9
+        lim1, lim2, lim3, lim4 = 7.4772, 8.0, 8.5, 9.0
+        #agelims = [0, lim1, lim2, lim3] + np.linspace(lim4, np.log10(tbinmax), n_bins_sfh-4).tolist() + [np.log10(t_univ*1e9)]
+        agelims = [0, lim1, lim2, lim3] + np.log10(np.linspace(10**lim4, tbinmax, n_bins_sfh-4)).tolist() + [np.log10(t_univ*1e9)]
+        agebins = np.array([agelims[:-1], agelims[1:]])
+        model_params['agebins']['init'] = agebins.T
+        model_params["logmass"]["prior"] = priors.TopHat(mini=10, maxi=12.0)
         #t_univ = cosmo.age(catalog[idx_cat]['ZSPEC']).value
         #model_params = TemplateLibrary["continuity_sfh"]
         #model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=7)
