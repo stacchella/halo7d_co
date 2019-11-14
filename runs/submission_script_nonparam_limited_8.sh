@@ -30,7 +30,7 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --apply_chi_cut \
 --chi_cut_outlier=5.0 \
 --non_param_sfh \
---n_bins_sfh=10 \
+--n_bins_sfh=8 \
 --restrict_dust_agn \
 --restrict_prior \
 --err_floor_phot=0.05 \
