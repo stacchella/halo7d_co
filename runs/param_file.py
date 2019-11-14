@@ -98,6 +98,8 @@ def read_results(filename):
     res, obs, mod = reader.results_from(filename)
     # update data table
     res['run_params']['data_table'] = path_wdir + 'data/halo7d_with_phot.fits'
+    res['run_params']['init_run_file'] = '/Volumes/Tacchella/Work/Postdoc/halo7d/results/param_init/posterior_draws/summary_param_init_run.pkl'
+    res['run_params']['path_files_init_run'] = '/Volumes/Tacchella/Work/Postdoc/halo7d/results/param_init/'
     mod = reader.get_model(res)
     # update filters
     filternames = [str(ii) for ii in obs['filters']]
