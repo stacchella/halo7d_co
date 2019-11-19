@@ -27,8 +27,6 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --outfile="halo7d_nonparametric_limited_10_wos" \
 --init_run_file='/n/conroyfs1/stacchella/halo7d_co//results/param_init/posterior_draws/summary_param_init_run.pkl' \
 --path_files_init_run='/n/conroyfs1/stacchella/halo7d_co/results/param_init/' \
---apply_chi_cut \
---chi_cut_outlier=5.0 \
 --non_param_sfh \
 --n_bins_sfh=10 \
 --restrict_dust_agn \
