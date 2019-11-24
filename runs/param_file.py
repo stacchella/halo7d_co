@@ -125,7 +125,7 @@ def get_mask_outlier(path_files, summary_param, gal_id, chi_cut_outlier):
 
 # function to build obs dictionary
 
-def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_floor_phot=0.05, err_floor_spec=0.01, remove_zp_offsets=True,
+def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_floor_phot=0.05, err_floor_spec=0.01, remove_zp_offsets=False,
               apply_chi_cut=False, init_run_file=path_wdir+'/results/param_init/posterior_draws/summary_param_init_run.pkl', chi_cut_outlier=5.0,
               path_files_init_run=path_wdir+'/results/param_init/', S2N_cut=1.0, remove_mips24=False, switch_off_phot=False, switch_off_spec=False, **kwargs):
     """Load photometry from an ascii file.  Assumes the following columns:
