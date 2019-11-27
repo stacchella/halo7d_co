@@ -375,12 +375,13 @@ def build_model(objid=1, data_table=path_wdir + 'data/halo7d_with_phot.fits', in
     idx_cat = objid-1
     gal_id = catalog[idx_cat]['ID']
 
-    # read in prior file
-    summary_param = hickle.load(init_run_file)
+    # read in prior file for prior restriction
+    if restrict_prior:
+        summary_param = hickle.load(init_run_file)
 
     # get SFH template
     if non_param_sfh:
-        t_univ = cosmo.age(summary_param[gal_id]['thetas']['zred']['q50']).value
+        t_univ = cosmo.age(catalog[idx_cat]['ZSPEC']).value
         model_params = TemplateLibrary["continuity_sfh"]
         #if (n_bins_sfh == 8):
         #    model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=n_bins_sfh)
