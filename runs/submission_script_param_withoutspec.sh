@@ -25,19 +25,8 @@ source activate pro
 srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/runs/param_file.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
 --outfile="halo7d_parametric_wos" \
---init_run_file='/n/conroyfs1/stacchella/halo7d_co//results/param_init/posterior_draws/summary_param_init_run.pkl' \
---path_files_init_run='/n/conroyfs1/stacchella/halo7d_co/results/param_init/' \
---apply_chi_cut \
---chi_cut_outlier=5.0 \
 --err_floor_phot=0.05 \
 --S2N_cut=5.0 \
 --switch_off_spec \
 --add_duste \
 --add_agn \
---dynesty \
---nested_method="rwalk" \
---nlive_batch=100 \
---nlive_init=100 \
---nested_posterior_thresh=0.05 \
---nested_dlogz_init=0.05 \
---nested_maxcall=3000000 
