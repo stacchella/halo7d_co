@@ -471,6 +471,8 @@ if __name__ == '__main__':
                         help="Names of table from which to get photometry.")
     parser.add_argument('--objid', type=int, default=0,
                         help="Zero-index row number in the table to fit.")
+    parser.add_argument('--S2N_cut', type=np.float, default=5.0,
+                        help="Signal-to-noise cut applied to sample.")
     parser.add_argument('--non_param_sfh', action="store_true",
                         help="If set, fit non-parametric star-formation history model.")
     parser.add_argument('--n_bins_sfh', type=int, default=8,
