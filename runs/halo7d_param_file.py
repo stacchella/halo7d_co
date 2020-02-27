@@ -194,7 +194,7 @@ def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_fl
 # --------------
 # Model Definition
 # --------------
-def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False, mixture_model=True, marginalize_neb=True,
+def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False, switch_off_mix=False, marginalize_neb=True,
                 n_bins_sfh=8, add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, **extras):
     """Construct a model.  This method defines a number of parameter
     specification dictionaries and uses them to initialize a
@@ -235,6 +235,7 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
         model_params['agebins']['init'] = agebins.T
         model_params["logmass"]["prior"] = priors.TopHat(mini=10.0, maxi=12.0)
     else:
+        model_params = TemplateLibrary["parametric_sfh"]
         model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
         model_params["tage"]["prior"] = priors.TopHat(mini=0.0, maxi=cosmo.age(obs['redshift']).value)
         model_params["mass"]["prior"] = priors.LogUniform(mini=1e10, maxi=1e12)
@@ -332,7 +333,7 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
     # This is a pixel outlier model. It helps to marginalize over
     # poorly modeled noise, such as residual sky lines or
     # even missing absorption lines
-    if mixture_model:
+    if not switch_off_mix:
         model_params['f_outlier_spec'] = {"N": 1,
                                           "isfree": True,
                                           "init": 0.01,
@@ -499,6 +500,8 @@ if __name__ == '__main__':
                         help="If set, remove spectrum from obs.")
     parser.add_argument('--switch_off_phot', action="store_true",
                         help="If set, remove photometry from obs.")
+    parser.add_argument('--switch_off_mix', action="store_true",
+                        help="If set, switch off mixture model.")
 
     args = parser.parse_args()
     run_params = vars(args)
