@@ -235,7 +235,6 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
         model_params['agebins']['init'] = agebins.T
         model_params["logmass"]["prior"] = priors.TopHat(mini=10.0, maxi=12.0)
     else:
-        model_params = TemplateLibrary["parametric_sfh"]
         model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
         model_params["tage"]["prior"] = priors.TopHat(mini=0.0, maxi=cosmo.age(obs['redshift']).value)
         model_params["mass"]["prior"] = priors.LogUniform(mini=1e10, maxi=1e12)
