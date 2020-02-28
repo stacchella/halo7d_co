@@ -6,7 +6,7 @@ from sedpy.observate import load_filters
 from prospect import prospect_args
 from prospect.fitting import fit_model, lnprobfn
 from prospect.io import write_results as writer
-from prospect.models.sedmodel import PolySpecModel
+from prospect.models.sedmodel import PolySpecModel, PolySedModel
 from prospect.models.templates import TemplateLibrary, adjust_continuity_agebins
 from prospect.models import priors
 from astropy.cosmology import Planck15 as cosmo
@@ -225,7 +225,6 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
     # get SFH template
     if non_param_sfh:
         t_univ = cosmo.age(obs['redshift']).value
-        model_params = TemplateLibrary["continuity_sfh"]
         model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=n_bins_sfh)
         tbinmax = 0.85 * t_univ * 1e9
         lim1, lim2, lim3, lim4 = 7.4772, 8.0, 8.5, 9.0
@@ -350,7 +349,10 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
                                        "prior": priors.TopHat(mini=1.0, maxi=3.0)}
 
     # Now instantiate the model using this new dictionary of parameter specifications
-    model = PolySpecModel(model_params)
+    if non_param_sfh:
+        model = PolySpecModel(model_params)
+    else:
+        model = PolySedModel(model_params)
 
     return model
 
