@@ -39,20 +39,16 @@ parser.add_argument("--number_of_bins", type=int, help="number of cores")
 parser.add_argument("--idx_file_key", type=int, help="iteration variable")
 parser.add_argument("--path_results", type=str, help="path results")
 parser.add_argument("--ncalc", type=int, help="number of samples to draw from posterior")
-parser.add_argument('--init_run_file', type=str, default=path_wdir+'/results/param_init/posterior_draws/summary_param_init_run.pkl',
-                    help="Name of file containing priors.")
 parser.add_argument('--non_param_sfh', action="store_true",
                     help="If set, fit non-parametric star-formation history model.")
 parser.add_argument('--n_bins_sfh', type=int, default=8,
                     help="Number of bins for SFH (non parametric).")
-parser.add_argument('--restrict_dust_agn', action="store_true",
-                    help="If set, restrict AGN and dust emission parameters.")
-parser.add_argument('--restrict_prior', action="store_true",
-                    help="If set, restrict priors.")
 parser.add_argument('--add_jitter', action="store_true",
                     help="If set, jitter noise.")
 parser.add_argument('--fit_continuum', action="store_true",
                     help="If set, fit continuum.")
+parser.add_argument('--add_neb', action="store_true",
+                    help="If set, add nebular emission to the model.")
 parser.add_argument('--add_duste', action="store_true",
                     help="If set, add dust emission to the model.")
 parser.add_argument('--add_agn', action="store_true",
@@ -138,9 +134,8 @@ print idx_file_considered
 for ii in range(len(idx_file_considered)):
     print result_file_list[idx_file_considered[ii]]
     obs, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=args.non_param_sfh, n_bins_sfh=args.n_bins_sfh,
-                              add_duste=args.add_duste, add_jitter=args.add_jitter, add_agn=args.add_agn, fit_continuum=args.fit_continuum,
-                              remove_mips24=args.remove_mips24, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec,
-                              restrict_dust_agn=args.restrict_dust_agn, restrict_prior=args.restrict_prior, init_run_file=args.init_run_file)
+                              add_neb=args.add_neb, add_duste=args.add_duste, add_jitter=args.add_jitter, add_agn=args.add_agn, fit_continuum=args.fit_continuum,
+                              remove_mips24=args.remove_mips24, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec)
     output['file_name'] = result_file_list[idx_file_considered[ii]].split('/')[-1]
     output['ID'] = obs['id_halo7d']
     output['ra'] = obs['RA']

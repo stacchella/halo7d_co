@@ -28,7 +28,6 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/scripts/draw_posterior_output
 --non_param_sfh \
 --n_bins_sfh=8 \
 --switch_off_spec \
+--add_neb \
 --add_duste \
 --add_agn \
---restrict_dust_agn \
---restrict_prior

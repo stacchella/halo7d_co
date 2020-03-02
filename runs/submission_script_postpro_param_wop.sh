@@ -27,5 +27,6 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/scripts/draw_posterior_output
 --ncalc=1000 \
 --add_jitter \
 --fit_continuum \
+--add_neb \
 --add_duste \
 --add_agn

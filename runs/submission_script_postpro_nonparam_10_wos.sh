@@ -30,5 +30,3 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/scripts/draw_posterior_output
 --switch_off_spec \
 --add_duste \
 --add_agn \
---restrict_dust_agn \
---restrict_prior

@@ -29,7 +29,6 @@ srun -n 1 python /n/conroyfs1/stacchella/halo7d_co/scripts/draw_posterior_output
 --n_bins_sfh=12 \
 --add_jitter \
 --fit_continuum \
+--add_neb \
 --add_duste \
 --add_agn \
---restrict_dust_agn \
---restrict_prior
