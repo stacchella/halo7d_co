@@ -29,7 +29,7 @@ filter_folder = path_wdir + '/data/filters/'
 # load parameter file
 
 sys.path.append(path_wdir + 'runs/')
-import param_file as param_file
+import halo7d_param_file as param_file
 
 
 # pars args
@@ -86,12 +86,11 @@ def read_results(filename):
 
 
 def investigate(file_input, ncalc, non_param, n_bins_sfh, add_duste=False, add_neb=False, add_jitter=False,
-                add_agn=False, fit_continuum=False, remove_mips24=False, switch_off_phot=False,
-                switch_off_spec=False, init_run_file=False, restrict_dust_agn=False, restrict_prior=False):
+                add_agn=False, fit_continuum=False, remove_mips24=False, switch_off_phot=False, switch_off_spec=False):
     print file_input
     # read results
     res, obs, mod, sps = read_results(file_input)
-    mod = param_file.build_model(objid=obs['cat_row']+1, non_param_sfh=non_param, n_bins_sfh=n_bins_sfh, add_duste=add_duste, add_neb=add_neb, add_jitter=add_jitter, add_agn=add_agn, fit_continuum=fit_continuum, remove_mips24=remove_mips24, switch_off_phot=switch_off_phot, switch_off_spec=switch_off_spec, init_run_file=init_run_file, restrict_dust_agn=restrict_dust_agn, restrict_prior=restrict_prior)
+    mod = param_file.build_model(objid=obs['cat_row']+1, non_param_sfh=non_param, n_bins_sfh=n_bins_sfh, add_duste=add_duste, add_neb=add_neb, add_jitter=add_jitter, add_agn=add_agn, fit_continuum=fit_continuum, remove_mips24=remove_mips24, switch_off_phot=switch_off_phot, switch_off_spec=switch_off_spec)
     output = {}
     nsample = res['chain'].shape[0]
     sample_idx = np.random.choice(np.arange(nsample), size=ncalc, p=res['weights'], replace=False)
