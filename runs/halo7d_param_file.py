@@ -307,8 +307,7 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
                 #SPS_HOME = os.getenv('SPS_HOME')
                 #emline_info = np.genfromtxt(SPS_HOME + '/data/emlines_info.dat', dtype=[('wave', 'f8'), ('name', 'S20')], delimiter=',')
                 to_fit = ['[OII]3726', '[OII]3729', 'H 3798', 'H 3835', 'H 3889', 'H 3970', '[NeIII]3870', 'H delta 4102', 'H gamma 4340',
-                          '[OIII]4364', 'HeI 4472', 'H beta 4861', '[OIII]4960', '[OIII]5007', '[ArIII]5193', '[NII]6549', 'H alpha 6563',
-                          '[NII]6585', '[SII]6717', '[SII]6732']
+                          '[OIII]4364', 'H beta 4861', '[OIII]4960', '[OIII]5007', '[NII]6549', 'H alpha 6563', '[NII]6585']
                 #idx = np.array([1 if name in to_fit else 0 for name in emline_info['name']], dtype=bool)
                 model_params['lines_to_fit']['init'] = to_fit
 
@@ -515,12 +514,12 @@ if __name__ == '__main__':
     run_params['nested_nlive_batch'] = 200
     run_params['nested_walks'] = 48  # sampling gets very inefficient w/ high S/N spectra
     run_params['nested_nlive_init'] = 300
-    run_params['nested_dlogz_init'] = 0.01
-    run_params['nested_maxcall'] = 2000000
-    run_params['nested_maxcall_init'] = 2000000
+    run_params['nested_dlogz_init'] = 0.05
+    run_params['nested_maxcall'] = 5000000
+    run_params['nested_maxcall_init'] = 5000000
     run_params['nested_method'] = 'rwalk'
     run_params['nested_maxbatch'] = None
-    run_params['nested_posterior_thresh'] = 0.02
+    run_params['nested_posterior_thresh'] = 0.1
     run_params['nested_first_update'] = {'min_ncall': 20000, 'min_eff': 7.5}
 
     obs, model, sps, noise = build_all(**run_params)
