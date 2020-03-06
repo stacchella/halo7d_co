@@ -2,6 +2,8 @@
 Sandro Tacchella
 June 24, 2019   : iniate
 run this script to combine all .pkl files (run on interactive node)
+module load python/2.7.14-fasrc01
+source activate pro
 python summarize_draw_cluster.py
 '''
 
@@ -14,8 +16,8 @@ from tqdm import tqdm
 
 # define paths
 
-path_results = '/n/conroyfs1/stacchella/halo7d_co/results/nonparam_limited_new/posterior_draws/'
-name_output_file = 'summary_nonparam_limited_run.pkl'
+path_results = '/n/conroyfs1/stacchella/halo7d_co/results/nonparam_12/posterior_draws/'
+name_output_file = 'summary_nonparam_12_run.pkl'
 
 result_file_list = glob.glob(path_results + '*_output.pkl')
 
