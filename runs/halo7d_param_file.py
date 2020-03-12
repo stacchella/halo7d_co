@@ -531,6 +531,8 @@ if __name__ == '__main__':
     hfile = path_wdir + "results/{0}_idx_{1}_mcmc.h5".format(args.outfile, int(args.objid)-1)
     output = fit_model(obs, model, sps, noise, lnprobfn=lnprobfn, **run_params)
 
+    print('writing hdf5 file now...')
+
     writer.write_hdf5(hfile, run_params, model, obs,
                       output["sampling"][0], output["optimization"][0],
                       tsample=output["sampling"][1],

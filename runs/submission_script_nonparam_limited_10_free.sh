@@ -9,7 +9,7 @@
 ### Partition or queue name
 #SBATCH -p conroy,itc_cluster,hernquist,shared
 ### memory per cpu, in MB
-#SBATCH --mem-per-cpu=10000
+#SBATCH --mem-per-cpu=2000
 ### constraints
 #SBATCH --constraint=intel
 ### Job name

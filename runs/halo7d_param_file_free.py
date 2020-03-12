@@ -272,10 +272,12 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
         model_params.update(TemplateLibrary["dust_emission"])
         model_params['duste_gamma']['isfree'] = True
         model_params['duste_gamma']['init'] = 0.01
+        model_params['duste_gamma']['prior'] = priors.LogUniform(mini=1e-4, maxi=0.1)
         model_params['duste_qpah']['isfree'] = True
         model_params['duste_qpah']['prior'] = priors.TopHat(mini=0.5, maxi=7.0)
         model_params['duste_umin']['isfree'] = True
         model_params['duste_umin']['init'] = 1.0
+        model_params['duste_umin']['prior'] = priors.ClippedNormal(mini=0.1, maxi=15.0, mean=2.0, sigma=1.0)
 
     if add_agn:
         # Allow for the presence of an AGN in the mid-infrared
@@ -291,10 +293,10 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
         model_params['gas_logu']['isfree'] = True
         model_params['gas_logu']['init'] = -2.0
         model_params['gas_logz']['isfree'] = True
+        _ = model_params["gas_logz"].pop("depends_on")
         model_params['nebemlineinspec'] = {'N': 1,
                                            'isfree': False,
                                            'init': False}
-        #_ = model_params["gas_logz"].pop("depends_on")
 
         if marginalize_neb:
             model_params.update(TemplateLibrary['nebular_marginalization'])
@@ -515,8 +517,8 @@ if __name__ == '__main__':
     run_params['nested_walks'] = 48  # sampling gets very inefficient w/ high S/N spectra
     run_params['nested_nlive_init'] = 300
     run_params['nested_dlogz_init'] = 0.05
-    run_params['nested_maxcall'] = 7000000
-    run_params['nested_maxcall_init'] = 7000000
+    run_params['nested_maxcall'] = 1000000
+    run_params['nested_maxcall_init'] = 1000000
     run_params['nested_method'] = 'rwalk'
     run_params['nested_maxbatch'] = None
     run_params['nested_posterior_thresh'] = 0.1
@@ -530,6 +532,8 @@ if __name__ == '__main__':
 
     hfile = path_wdir + "results/{0}_idx_{1}_mcmc.h5".format(args.outfile, int(args.objid)-1)
     output = fit_model(obs, model, sps, noise, lnprobfn=lnprobfn, **run_params)
+
+    print('writing hdf5 file now...')
 
     writer.write_hdf5(hfile, run_params, model, obs,
                       output["sampling"][0], output["optimization"][0],
