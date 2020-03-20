@@ -514,13 +514,13 @@ if __name__ == '__main__':
     run_params['nested_nlive_batch'] = 200
     run_params['nested_walks'] = 48  # sampling gets very inefficient w/ high S/N spectra
     run_params['nested_nlive_init'] = 300
-    run_params['nested_dlogz_init'] = 0.05
-    run_params['nested_maxcall'] = 1000000
-    run_params['nested_maxcall_init'] = 1000000
+    run_params['nested_dlogz_init'] = 0.02
+    run_params['nested_maxcall'] = 7500000
+    run_params['nested_maxcall_init'] = 7500000
     run_params['nested_method'] = 'rwalk'
     run_params['nested_maxbatch'] = None
     run_params['nested_save_bounds'] = False
-    run_params['nested_posterior_thresh'] = 0.1
+    run_params['nested_posterior_thresh'] = 0.05
     run_params['nested_first_update'] = {'min_ncall': 20000, 'min_eff': 7.5}
 
     obs, model, sps, noise = build_all(**run_params)
