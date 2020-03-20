@@ -6,7 +6,7 @@ from sedpy.observate import load_filters
 from prospect import prospect_args
 from prospect.fitting import fit_model, lnprobfn
 from prospect.io import write_results as writer
-from prospect.models.sedmodel import PolySpecModel, PolySedModel
+from prospect.models.sedmodel import PolySpecModel
 from prospect.models.templates import TemplateLibrary, adjust_continuity_agebins
 from prospect.models import priors
 from astropy.cosmology import Planck15 as cosmo
@@ -191,6 +191,7 @@ def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_fl
 
     return obs
 
+
 # --------------
 # Model Definition
 # --------------
@@ -235,7 +236,7 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
         model_params["logmass"]["prior"] = priors.TopHat(mini=10.0, maxi=12.0)
     else:
         model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
-        model_params["tage"]["prior"] = priors.TopHat(mini=0.0, maxi=cosmo.age(obs['redshift']).value)
+        model_params["tage"]["prior"] = priors.TopHat(mini=1e-3, maxi=cosmo.age(obs['redshift']).value)
         model_params["mass"]["prior"] = priors.LogUniform(mini=1e10, maxi=1e12)
 
     # metallicity (no mass-metallicity prior yet!)
@@ -270,12 +271,14 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
     if add_duste:
         # Add dust emission (with fixed dust SED parameters)
         model_params.update(TemplateLibrary["dust_emission"])
-        model_params['duste_gamma']['isfree'] = False
+        model_params['duste_gamma']['isfree'] = True
         model_params['duste_gamma']['init'] = 0.01
+        model_params['duste_gamma']['prior'] = priors.LogUniform(mini=1e-4, maxi=0.1)
         model_params['duste_qpah']['isfree'] = True
         model_params['duste_qpah']['prior'] = priors.TopHat(mini=0.5, maxi=7.0)
-        model_params['duste_umin']['isfree'] = False
+        model_params['duste_umin']['isfree'] = True
         model_params['duste_umin']['init'] = 1.0
+        model_params['duste_umin']['prior'] = priors.ClippedNormal(mini=0.1, maxi=15.0, mean=2.0, sigma=1.0)
 
     if add_agn:
         # Allow for the presence of an AGN in the mid-infrared
@@ -288,13 +291,13 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
     if add_neb:
         # Add nebular emission
         model_params.update(TemplateLibrary["nebular"])
-        model_params['gas_logu']['isfree'] = False
+        model_params['gas_logu']['isfree'] = True
         model_params['gas_logu']['init'] = -2.0
-        model_params['gas_logz']['isfree'] = False
+        model_params['gas_logz']['isfree'] = True
+        _ = model_params["gas_logz"].pop("depends_on")
         model_params['nebemlineinspec'] = {'N': 1,
                                            'isfree': False,
                                            'init': False}
-        #_ = model_params["gas_logz"].pop("depends_on")
 
         if marginalize_neb:
             model_params.update(TemplateLibrary['nebular_marginalization'])
@@ -350,10 +353,7 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
                                        "prior": priors.TopHat(mini=1.0, maxi=3.0)}
 
     # Now instantiate the model using this new dictionary of parameter specifications
-    if non_param_sfh:
-        model = PolySpecModel(model_params)
-    else:
-        model = PolySedModel(model_params)
+    model = PolySpecModel(model_params)
 
     return model
 
@@ -435,7 +435,7 @@ def build_sps(zcontinuous=1, non_param_sfh=False, add_lsf=False, compute_vega_ma
         from prospect.sources import CSPSpecBasis
         sps = CSPSpecBasis(zcontinuous=zcontinuous,
                            compute_vega_mags=compute_vega_mags,
-                           reserved_params=['tage', 'sigma_smooth', 'zred'])
+                           reserved_params=['sigma_smooth', 'zred'])
 
     if add_lsf:
         set_halo7d_lsf(sps.ssp, **extras)
@@ -515,10 +515,11 @@ if __name__ == '__main__':
     run_params['nested_walks'] = 48  # sampling gets very inefficient w/ high S/N spectra
     run_params['nested_nlive_init'] = 300
     run_params['nested_dlogz_init'] = 0.05
-    run_params['nested_maxcall'] = 5000000
-    run_params['nested_maxcall_init'] = 5000000
+    run_params['nested_maxcall'] = 1000000
+    run_params['nested_maxcall_init'] = 1000000
     run_params['nested_method'] = 'rwalk'
     run_params['nested_maxbatch'] = None
+    run_params['nested_save_bounds'] = False
     run_params['nested_posterior_thresh'] = 0.1
     run_params['nested_first_update'] = {'min_ncall': 20000, 'min_eff': 7.5}
 
