@@ -327,11 +327,12 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
                                      'init': polyorder_estimate,
                                      'isfree': False}
         # fit for normalization of spectrum
-        model_params['spec_norm'] = {'N': 1,
-                                     'init': 0.8,
-                                     'isfree': True,
-                                     'prior': priors.Normal(sigma=0.2, mean=0.8),
-                                     'units': 'f_true/f_obs'}
+        # model_params['spec_norm'] = {'N': 1,
+        #                              'init': 0.8,
+        #                              'isfree': True,
+        #                              'prior': priors.Normal(sigma=0.2, mean=0.8),
+        #                              'units': 'f_true/f_obs'}
+
     # This is a pixel outlier model. It helps to marginalize over
     # poorly modeled noise, such as residual sky lines or
     # even missing absorption lines
