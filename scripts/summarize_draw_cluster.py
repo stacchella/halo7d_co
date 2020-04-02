@@ -9,6 +9,7 @@ python summarize_draw_cluster.py
 
 # import modules
 
+import os
 import hickle
 import glob
 from tqdm import tqdm
@@ -16,7 +17,8 @@ from tqdm import tqdm
 
 # define paths
 
-path_results = '/n/conroyfs1/stacchella/halo7d_co/results/nonparam_12/posterior_draws/'
+path_wdir = os.environ['WDIR_halo7d']
+path_results = path_wdir + 'results/nonparam_12/posterior_draws/'
 name_output_file = 'summary_nonparam_12_run.pkl'
 
 result_file_list = glob.glob(path_results + '*_output.pkl')

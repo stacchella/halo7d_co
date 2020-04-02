@@ -66,7 +66,7 @@ run_params = {'number_of_bins': args.number_of_bins,  # this gives number of cor
               'idx_file_key': args.idx_file_key,  # iteration variable
               }
 
-path_res = args.path_results
+path_res = path_wdir + 'results/' + args.path_results
 ncalc = args.ncalc
 
 
