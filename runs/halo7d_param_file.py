@@ -196,7 +196,7 @@ def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_fl
 # Model Definition
 # --------------
 def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False, switch_off_mix=False, marginalize_neb=True,
-                n_bins_sfh=8, add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, **extras):
+                n_bins_sfh=8, add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, fixed_dust=False, **extras):
     """Construct a model.  This method defines a number of parameter
     specification dictionaries and uses them to initialize a
     `models.sedmodel.SedModel` object.
@@ -240,28 +240,39 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
         model_params["mass"]["prior"] = priors.LogUniform(mini=1e10, maxi=1e12)
 
     # metallicity (no mass-metallicity prior yet!)
-    model_params["logzsol"]["prior"] = priors.TopHat(mini=-1.0, maxi=0.3)
+    if fixed_dust:
+        model_params["logzsol"]["prior"] = priors.ClippedNormal(mini=-1.0, maxi=0.3, mean=0.0, sigma=0.15)
+    else:
+        model_params["logzsol"]["prior"] = priors.TopHat(mini=-1.0, maxi=0.3)
 
     # complexify the dust
-    model_params['dust_type']['init'] = 4
-    model_params["dust2"]["prior"] = priors.ClippedNormal(mini=0.0, maxi=4.0, mean=0.3, sigma=1)
-    model_params["dust_index"] = {"N": 1,
-                                  "isfree": True,
-                                  "init": 0.0, "units": "power-law multiplication of Calzetti",
-                                  "prior": priors.TopHat(mini=-1.0, maxi=0.4)}
+    if fixed_dust:
+        model_params['dust_type']['init'] = 2
+        model_params["dust2"]["prior"] = priors.ClippedNormal(mini=0.0, maxi=4.0, mean=0.3, sigma=1)
+        model_params['dust1'] = {"N": 1,
+                                 "isfree": False,
+                                 "init": 0.0, "units": "optical depth towards young stars",
+                                 "prior": None}
+    else:
+        model_params['dust_type']['init'] = 4
+        model_params["dust2"]["prior"] = priors.ClippedNormal(mini=0.0, maxi=4.0, mean=0.3, sigma=1)
+        model_params["dust_index"] = {"N": 1,
+                                      "isfree": True,
+                                      "init": 0.0, "units": "power-law multiplication of Calzetti",
+                                      "prior": priors.TopHat(mini=-1.0, maxi=0.4)}
 
-    def to_dust1(dust1_fraction=None, dust1=None, dust2=None, **extras):
-        return(dust1_fraction*dust2)
+        def to_dust1(dust1_fraction=None, dust1=None, dust2=None, **extras):
+            return(dust1_fraction*dust2)
 
-    model_params['dust1'] = {"N": 1,
-                             "isfree": False,
-                             'depends_on': to_dust1,
-                             "init": 0.0, "units": "optical depth towards young stars",
-                             "prior": None}
-    model_params['dust1_fraction'] = {'N': 1,
-                                      'isfree': True,
-                                      'init': 1.0,
-                                      'prior': priors.ClippedNormal(mini=0.0, maxi=2.0, mean=1.0, sigma=0.3)}
+        model_params['dust1'] = {"N": 1,
+                                 "isfree": False,
+                                 'depends_on': to_dust1,
+                                 "init": 0.0, "units": "optical depth towards young stars",
+                                 "prior": None}
+        model_params['dust1_fraction'] = {'N': 1,
+                                          'isfree': True,
+                                          'init': 1.0,
+                                          'prior': priors.ClippedNormal(mini=0.0, maxi=2.0, mean=1.0, sigma=0.3)}
 
     # velocity dispersion
     model_params.update(TemplateLibrary['spectral_smoothing'])
@@ -505,6 +516,8 @@ if __name__ == '__main__':
                         help="If set, remove photometry from obs.")
     parser.add_argument('--switch_off_mix', action="store_true",
                         help="If set, switch off mixture model.")
+    parser.add_argument('--fixed_dust', action="store_true",
+                        help="If set, fix dust to Calzetti and add tight Z prior.")
 
     args = parser.parse_args()
     run_params = vars(args)
