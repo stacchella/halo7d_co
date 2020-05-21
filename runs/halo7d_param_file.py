@@ -196,7 +196,7 @@ def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_fl
 # Model Definition
 # --------------
 def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False, switch_off_mix=False, marginalize_neb=True,
-                n_bins_sfh=8, add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, fixed_dust=False, **extras):
+                n_bins_sfh=8, use_eline_prior=False, add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, fixed_dust=False, **extras):
     """Construct a model.  This method defines a number of parameter
     specification dictionaries and uses them to initialize a
     `models.sedmodel.SedModel` object.
@@ -227,23 +227,23 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
     if non_param_sfh:
         t_univ = cosmo.age(obs['redshift']).value
         model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=n_bins_sfh)
-        tbinmax = 0.85 * t_univ * 1e9
+        tbinmax = 0.95 * t_univ * 1e9
         lim1, lim2, lim3, lim4 = 7.4772, 8.0, 8.5, 9.0
         #agelims = [0, lim1, lim2, lim3] + np.linspace(lim4, np.log10(tbinmax), n_bins_sfh-4).tolist() + [np.log10(t_univ*1e9)]
         agelims = [0, lim1, lim2, lim3] + np.log10(np.linspace(10**lim4, tbinmax, n_bins_sfh-4)).tolist() + [np.log10(t_univ*1e9)]
         agebins = np.array([agelims[:-1], agelims[1:]])
         model_params['agebins']['init'] = agebins.T
-        model_params["logmass"]["prior"] = priors.TopHat(mini=10.0, maxi=12.0)
+        model_params["logmass"]["prior"] = priors.TopHat(mini=9.5, maxi=12.0)
     else:
         model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
         model_params["tage"]["prior"] = priors.TopHat(mini=1e-3, maxi=cosmo.age(obs['redshift']).value)
-        model_params["mass"]["prior"] = priors.LogUniform(mini=1e10, maxi=1e12)
+        model_params["mass"]["prior"] = priors.LogUniform(mini=3e9, maxi=1e12)
 
     # metallicity (no mass-metallicity prior yet!)
     if fixed_dust:
-        model_params["logzsol"]["prior"] = priors.ClippedNormal(mini=-1.0, maxi=0.3, mean=0.0, sigma=0.15)
+        model_params["logzsol"]["prior"] = priors.ClippedNormal(mini=-1.0, maxi=0.19, mean=0.0, sigma=0.15)
     else:
-        model_params["logzsol"]["prior"] = priors.TopHat(mini=-1.0, maxi=0.3)
+        model_params["logzsol"]["prior"] = priors.TopHat(mini=-1.0, maxi=0.19)
 
     # complexify the dust
     if fixed_dust:
@@ -313,8 +313,8 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
         if marginalize_neb:
             model_params.update(TemplateLibrary['nebular_marginalization'])
             #model_params.update(TemplateLibrary['fit_eline_redshift'])
-            model_params['eline_prior_width']['init'] = 1.0
-            model_params['use_eline_prior']['init'] = True
+            model_params['eline_prior_width']['init'] = 3.0
+            model_params['use_eline_prior']['init'] = use_eline_prior
 
             # only marginalize over a few (strong) emission lines
             if True:
@@ -362,7 +362,7 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
         model_params['spec_jitter'] = {"N": 1,
                                        "isfree": True,
                                        "init": 1.0,
-                                       "prior": priors.TopHat(mini=1.0, maxi=3.0)}
+                                       "prior": priors.TopHat(mini=1.0, maxi=5.0)}
 
     # Now instantiate the model using this new dictionary of parameter specifications
     model = PolySpecModel(model_params)
@@ -428,8 +428,7 @@ def get_lsf(wave_obs, field, miles_fwhm_aa=2.54, zred=0.0, **extras):
     sigma_v_miles = lightspeed * miles_fwhm_aa / 2.355 / wave_rest
     # Get the quadrature difference
     # (Zero and negative values are skipped by FSPS)
-    #dsv = np.sqrt(np.clip(sigma_v**2 - sigma_v_miles**2, 0, np.inf))
-    dsv = sigma_v**2 - sigma_v_miles**2
+    dsv = np.sqrt(np.clip(sigma_v**2 - sigma_v_miles**2, 0, np.inf))
     # Restrict to regions where MILES is used
     good = (wave_rest > 3525.0) & (wave_rest < 7500)
     # return the broadening of the rest-frame library spectra required to match
@@ -508,6 +507,8 @@ if __name__ == '__main__':
                         help="Error floor for photometry.")
     parser.add_argument('--err_floor_spec', type=np.float, default=0.001,
                         help="Error floor for spectroscopy.")
+    parser.add_argument('--use_eline_prior', action="store_true",
+                        help="If set, use EL prior from cloudy.")
     parser.add_argument('--add_jitter', action="store_true",
                         help="If set, jitter noise.")
     parser.add_argument('--switch_off_spec', action="store_true",
@@ -529,8 +530,8 @@ if __name__ == '__main__':
     run_params['nested_walks'] = 45  # sampling gets very inefficient w/ high S/N spectra
     run_params['nested_nlive_init'] = 250
     run_params['nested_dlogz_init'] = 0.02
-    run_params['nested_maxcall'] = 10000000
-    run_params['nested_maxcall_init'] = 10000000
+    run_params['nested_maxcall'] = 14000000
+    run_params['nested_maxcall_init'] = 14000000
     run_params['nested_method'] = 'rwalk'
     run_params['nested_maxbatch'] = None
     run_params['nested_save_bounds'] = False
