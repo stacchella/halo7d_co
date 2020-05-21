@@ -436,7 +436,7 @@ def get_lsf(wave_obs, field, miles_fwhm_aa=2.54, zred=0.0, **extras):
     return wave_rest[good], dsv[good]
 
 
-def build_sps(zcontinuous=1, non_param_sfh=False, add_lsf=False, compute_vega_mags=False, **extras):
+def build_sps(zcontinuous=1, non_param_sfh=False, add_lsf=False, compute_vega_mags=False, zred=0.0, **extras):
     if non_param_sfh:
         from prospect.sources import FastStepBasis
         sps = FastStepBasis(zcontinuous=zcontinuous,
@@ -449,7 +449,7 @@ def build_sps(zcontinuous=1, non_param_sfh=False, add_lsf=False, compute_vega_ma
                            reserved_params=['sigma_smooth', 'zred'])
 
     if add_lsf:
-        set_halo7d_lsf(sps.ssp, **extras)
+        set_halo7d_lsf(sps.ssp, zred=zred, **extras)
 
     return sps
 
