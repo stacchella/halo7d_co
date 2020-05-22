@@ -23,7 +23,7 @@ source activate pro
 srun -n 1 python $DIR_CONROY/halo7d_co/scripts/draw_posterior_output_cluster.py \
 --number_of_bins=200 \
 --idx_file_key="${SLURM_ARRAY_TASK_ID}" \
---path_results="nonparam_10_useELprior/" \
+--path_results="nonparam_10_elprior/" \
 --ncalc=1000 \
 --non_param_sfh \
 --n_bins_sfh=10 \
