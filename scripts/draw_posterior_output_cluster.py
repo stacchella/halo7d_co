@@ -136,7 +136,7 @@ for ii in range(len(idx_file_considered)):
     print result_file_list[idx_file_considered[ii]]
     obs, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=args.non_param_sfh, n_bins_sfh=args.n_bins_sfh,
                               add_neb=args.add_neb, add_duste=args.add_duste, add_jitter=args.add_jitter, add_agn=args.add_agn, fit_continuum=args.fit_continuum, use_eline_prior=args.use_eline_prior,
-                              remove_mips24=args.remove_mips24, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec, fixed_dust=args.fixed_dust)
+                              switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec, fixed_dust=args.fixed_dust)
     output['file_name'] = result_file_list[idx_file_considered[ii]].split('/')[-1]
     output['ID'] = obs['id_halo7d']
     output['ra'] = obs['RA']
