@@ -33,3 +33,4 @@ srun -n 1 python $DIR_CONROY/halo7d_co/runs/halo7d_param_file.py \
 --add_duste \
 --add_agn \
 --add_jitter \
+--add_lsf \

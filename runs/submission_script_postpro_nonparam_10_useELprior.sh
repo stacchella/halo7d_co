@@ -7,30 +7,29 @@
 ### Requested computing time in minutes
 #SBATCH -t 10080
 ### Partition or queue name
-#SBATCH -p itc_cluster,hernquist,shared
+#SBATCH -p conroy,itc_cluster,hernquist,shared
 ### memory per cpu, in MB
-#SBATCH --mem-per-cpu=6000
-### constraints
-#SBATCH --constraint=intel
+#SBATCH --mem-per-cpu=4000
 ### Job name
-#SBATCH -J 'paramwo24'
+#SBATCH -J 'ppelprior_10'
 ### output and error logs
-#SBATCH -o paramwo24_%a.out
-#SBATCH -e paramwo24_%a.err
+#SBATCH -o ppelprior_10_%a.out
+#SBATCH -e ppelprior_10_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
 module load python/2.7.14-fasrc01
 source activate pro
-srun -n 1 python $DIR_CONROY/halo7d_co/runs/halo7d_param_file.py \
---objid="${SLURM_ARRAY_TASK_ID}" \
---outfile="halo7d_parametric_wo24" \
---remove_mips24 \
---err_floor_phot=0.05 \
---err_floor_spec=0.01 \
---S2N_cut=5.0 \
+srun -n 1 python $DIR_CONROY/halo7d_co/scripts/draw_posterior_output_cluster.py \
+--number_of_bins=200 \
+--idx_file_key="${SLURM_ARRAY_TASK_ID}" \
+--path_results="nonparam_10_useELprior/" \
+--ncalc=1000 \
+--non_param_sfh \
+--n_bins_sfh=10 \
+--add_jitter \
 --add_neb \
 --fit_continuum \
 --add_duste \
 --add_agn \
---add_jitter \
+--use_eline_prior \

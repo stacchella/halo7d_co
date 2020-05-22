@@ -11,10 +11,10 @@
 ### memory per cpu, in MB
 #SBATCH --mem-per-cpu=4000
 ### Job name
-#SBATCH -J 'pp_param_wos'
+#SBATCH -J 'ppwolsf_10'
 ### output and error logs
-#SBATCH -o pp_param_wos_%a.out
-#SBATCH -e pp_param_wos_%a.err
+#SBATCH -o ppwolsf_10_%a.out
+#SBATCH -e ppwolsf_10_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
@@ -23,8 +23,12 @@ source activate pro
 srun -n 1 python $DIR_CONROY/halo7d_co/scripts/draw_posterior_output_cluster.py \
 --number_of_bins=200 \
 --idx_file_key="${SLURM_ARRAY_TASK_ID}" \
---path_results="param_wos/" \
+--path_results="nonparam_10_woLSF/" \
 --ncalc=1000 \
---switch_off_spec \
+--non_param_sfh \
+--n_bins_sfh=10 \
+--add_jitter \
+--add_neb \
+--fit_continuum \
 --add_duste \
 --add_agn \

@@ -29,4 +29,4 @@ srun -n 1 python $DIR_CONROY/halo7d_co/scripts/draw_posterior_output_cluster.py 
 --fit_continuum \
 --add_neb \
 --add_duste \
---add_agn
+--add_agn \

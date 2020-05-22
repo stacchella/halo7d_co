@@ -7,30 +7,28 @@
 ### Requested computing time in minutes
 #SBATCH -t 10080
 ### Partition or queue name
-#SBATCH -p itc_cluster,hernquist,shared
+#SBATCH -p conroy,itc_cluster,hernquist,shared
 ### memory per cpu, in MB
-#SBATCH --mem-per-cpu=6000
-### constraints
-#SBATCH --constraint=intel
+#SBATCH --mem-per-cpu=4000
 ### Job name
-#SBATCH -J 'paramwop'
+#SBATCH -J 'ppwo24_10'
 ### output and error logs
-#SBATCH -o paramwop_%a.out
-#SBATCH -e paramwop_%a.err
+#SBATCH -o ppwo24_10_%a.out
+#SBATCH -e ppwo24_10_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
 module load python/2.7.14-fasrc01
 source activate pro
-srun -n 1 python $DIR_CONROY/halo7d_co/runs/halo7d_param_file.py \
---objid="${SLURM_ARRAY_TASK_ID}" \
---outfile="halo7d_parametric_wop" \
---err_floor_phot=0.05 \
---err_floor_spec=0.01 \
---S2N_cut=5.0 \
---switch_off_phot \
+srun -n 1 python $DIR_CONROY/halo7d_co/scripts/draw_posterior_output_cluster.py \
+--number_of_bins=200 \
+--idx_file_key="${SLURM_ARRAY_TASK_ID}" \
+--path_results="nonparam_10_wo24/" \
+--ncalc=1000 \
+--non_param_sfh \
+--n_bins_sfh=10 \
+--add_jitter \
 --add_neb \
 --fit_continuum \
 --add_duste \
 --add_agn \
---add_jitter \
