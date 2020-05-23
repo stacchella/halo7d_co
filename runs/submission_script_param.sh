@@ -7,7 +7,7 @@
 ### Requested computing time in minutes
 #SBATCH -t 10080
 ### Partition or queue name
-#SBATCH -p itc_cluster,hernquist,shared
+#SBATCH -p itc_cluster,hernquist,shared,conroy
 ### memory per cpu, in MB
 #SBATCH --mem-per-cpu=6000
 ### constraints
