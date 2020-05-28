@@ -5,9 +5,9 @@
 ### Requested number of nodes
 #SBATCH -N 1
 ### Requested computing time in minutes
-#SBATCH -t 20080
+#SBATCH -t 10080
 ### Partition or queue name
-#SBATCH -p conroy
+#SBATCH -p itc_cluster,hernquist,shared,conroy
 ### memory per cpu, in MB
 #SBATCH --mem-per-cpu=10000
 ### constraints
