@@ -18,8 +18,8 @@ from tqdm import tqdm
 # define paths
 
 path_wdir = os.environ['WDIR_halo7d']
-path_results = path_wdir + 'results/nonparam_12/posterior_draws/'
-name_output_file = 'summary_nonparam_12_run.pkl'
+path_results = path_wdir + 'results/nonparam_10/posterior_draws/'
+name_output_file = 'summary_nonparam_10_run.pkl'
 
 result_file_list = glob.glob(path_results + '*_output.pkl')
 

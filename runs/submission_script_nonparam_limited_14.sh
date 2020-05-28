@@ -5,11 +5,11 @@
 ### Requested number of nodes
 #SBATCH -N 1
 ### Requested computing time in minutes
-#SBATCH -t 20080
+#SBATCH -t 14000
 ### Partition or queue name
 #SBATCH -p conroy
 ### memory per cpu, in MB
-#SBATCH --mem-per-cpu=10000
+#SBATCH --mem-per-cpu=12000
 ### constraints
 #SBATCH --constraint=intel
 ### Job name

@@ -530,8 +530,8 @@ if __name__ == '__main__':
     run_params['nested_walks'] = 45  # sampling gets very inefficient w/ high S/N spectra
     run_params['nested_nlive_init'] = 250
     run_params['nested_dlogz_init'] = 0.02
-    run_params['nested_maxcall'] = 14000000
-    run_params['nested_maxcall_init'] = 14000000
+    run_params['nested_maxcall'] = 10000000
+    run_params['nested_maxcall_init'] = 10000000
     run_params['nested_method'] = 'rwalk'
     run_params['nested_maxbatch'] = None
     run_params['nested_save_bounds'] = False

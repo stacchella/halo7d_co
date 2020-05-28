@@ -11,10 +11,10 @@
 ### memory per cpu, in MB
 #SBATCH --mem-per-cpu=4000
 ### Job name
-#SBATCH -J 'pp_6'
+#SBATCH -J 'pp_6p2'
 ### output and error logs
-#SBATCH -o pp_6_%a.out
-#SBATCH -e pp_6_%a.err
+#SBATCH -o pp_6p2_%a.out
+#SBATCH -e pp_6p2_%a.err
 ### mail
 #SBATCH --mail-type=END
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
@@ -23,7 +23,7 @@ source activate pro
 srun -n 1 python $DIR_CONROY/halo7d_co/scripts/draw_posterior_output_cluster.py \
 --number_of_bins=200 \
 --idx_file_key="${SLURM_ARRAY_TASK_ID}" \
---path_results="nonparam_6/" \
+--path_results="nonparam_6_part2/" \
 --ncalc=1000 \
 --non_param_sfh \
 --n_bins_sfh=6 \
