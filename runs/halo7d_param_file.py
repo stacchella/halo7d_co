@@ -7,7 +7,7 @@ from prospect import prospect_args
 from prospect.fitting import fit_model, lnprobfn
 from prospect.io import write_results as writer
 from prospect.models.sedmodel import PolySpecModel
-from prospect.models.templates import TemplateLibrary, adjust_continuity_agebins
+from prospect.models.templates import TemplateLibrary, adjust_continuity_agebins, adjust_dirichlet_agebins
 from prospect.models import priors
 from astropy.cosmology import Planck15 as cosmo
 from prospect.likelihood import NoiseModel
@@ -195,7 +195,7 @@ def build_obs(objid=1, data_table=path_wdir+'data/halo7d_with_phot.fits', err_fl
 # --------------
 # Model Definition
 # --------------
-def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, add_agn=False, switch_off_mix=False, marginalize_neb=True,
+def build_model(objid=1, non_param_sfh=False, dirichlet_sfh=False, add_duste=False, add_neb=False, add_agn=False, switch_off_mix=False, marginalize_neb=True,
                 n_bins_sfh=8, use_eline_prior=False, add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, fixed_dust=False, **extras):
     """Construct a model.  This method defines a number of parameter
     specification dictionaries and uses them to initialize a
@@ -212,8 +212,10 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
     obs = build_obs(objid=objid)
 
     # get SFH template
-    if non_param_sfh:
+    if non_param_sfh and not dirichlet_sfh:
         model_params = TemplateLibrary["continuity_sfh"]
+    elif dirichlet_sfh:
+        model_params = TemplateLibrary["dirichlet_sfh"]
     else:
         model_params = TemplateLibrary["parametric_sfh"]
 
@@ -226,14 +228,17 @@ def build_model(objid=1, non_param_sfh=False, add_duste=False, add_neb=False, ad
     # get SFH template
     if non_param_sfh:
         t_univ = cosmo.age(obs['redshift']).value
-        model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=n_bins_sfh)
         tbinmax = 0.95 * t_univ * 1e9
         lim1, lim2, lim3, lim4 = 7.4772, 8.0, 8.5, 9.0
-        #agelims = [0, lim1, lim2, lim3] + np.linspace(lim4, np.log10(tbinmax), n_bins_sfh-4).tolist() + [np.log10(t_univ*1e9)]
         agelims = [0, lim1, lim2, lim3] + np.log10(np.linspace(10**lim4, tbinmax, n_bins_sfh-4)).tolist() + [np.log10(t_univ*1e9)]
-        agebins = np.array([agelims[:-1], agelims[1:]])
-        model_params['agebins']['init'] = agebins.T
-        model_params["logmass"]["prior"] = priors.TopHat(mini=9.5, maxi=12.0)
+        if dirichlet_sfh:
+            model_params = adjust_dirichlet_agebins(model_params, agelims=agelims)
+            model_params["total_mass"]["prior"] = priors.LogUniform(mini=3e9, maxi=1e12)
+        else:
+            model_params = adjust_continuity_agebins(model_params, tuniv=t_univ, nbins=n_bins_sfh)
+            agebins = np.array([agelims[:-1], agelims[1:]])
+            model_params['agebins']['init'] = agebins.T
+            model_params["logmass"]["prior"] = priors.TopHat(mini=9.5, maxi=12.0)
     else:
         model_params["tau"]["prior"] = priors.LogUniform(mini=1e-1, maxi=10)
         model_params["tage"]["prior"] = priors.TopHat(mini=1e-3, maxi=cosmo.age(obs['redshift']).value)
@@ -489,6 +494,8 @@ if __name__ == '__main__':
                         help="Signal-to-noise cut applied to sample.")
     parser.add_argument('--non_param_sfh', action="store_true",
                         help="If set, fit non-parametric star-formation history model.")
+    parser.add_argument('--dirichlet_sfh', action="store_true",
+                        help="If set, fit non-parametric star-formation history model with dirichlet prior.")
     parser.add_argument('--n_bins_sfh', type=int, default=8,
                         help="Number of bins for SFH (non parametric).")
     parser.add_argument('--add_lsf', action="store_true",
