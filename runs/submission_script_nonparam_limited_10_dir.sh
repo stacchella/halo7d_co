@@ -24,7 +24,7 @@ module load python/2.7.14-fasrc01
 source activate pro
 srun -n 1 python $DIR_CONROY/halo7d_co/runs/halo7d_param_file.py \
 --objid="${SLURM_ARRAY_TASK_ID}" \
---outfile="halo7d_nonparametric_10" \
+--outfile="halo7d_nonparametric_10_dir" \
 --non_param_sfh \
 --dirichlet_sfh \
 --n_bins_sfh=10 \
