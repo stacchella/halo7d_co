@@ -43,6 +43,8 @@ parser.add_argument('--non_param_sfh', action="store_true",
                     help="If set, fit non-parametric star-formation history model.")
 parser.add_argument('--n_bins_sfh', type=int, default=8,
                     help="Number of bins for SFH (non parametric).")
+parser.add_argument('--dirichlet_sfh', action="store_true",
+                    help="If set, fit non-parametric star-formation history model with dirichlet prior.")
 parser.add_argument('--add_jitter', action="store_true",
                     help="If set, jitter noise.")
 parser.add_argument('--fit_continuum', action="store_true",
@@ -87,12 +89,12 @@ def read_results(filename):
     return(res, obs, mod, sps)
 
 
-def investigate(file_input, ncalc, non_param, n_bins_sfh, add_duste=False, add_neb=False, add_jitter=False, use_eline_prior=False,
+def investigate(file_input, ncalc, non_param, n_bins_sfh, dirichlet_sfh=False, add_duste=False, add_neb=False, add_jitter=False, use_eline_prior=False,
                 add_agn=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, fixed_dust=False):
     print file_input
     # read results
     res, obs, mod, sps = read_results(file_input)
-    mod = param_file.build_model(objid=obs['cat_row']+1, non_param_sfh=non_param, n_bins_sfh=n_bins_sfh, add_duste=add_duste, add_neb=add_neb, add_jitter=add_jitter, add_agn=add_agn, fit_continuum=fit_continuum, switch_off_phot=switch_off_phot, switch_off_spec=switch_off_spec, fixed_dust=fixed_dust, use_eline_prior=use_eline_prior)
+    mod = param_file.build_model(objid=obs['cat_row']+1, non_param_sfh=non_param, n_bins_sfh=n_bins_sfh, dirichlet_sfh=dirichlet_sfh, add_duste=add_duste, add_neb=add_neb, add_jitter=add_jitter, add_agn=add_agn, fit_continuum=fit_continuum, switch_off_phot=switch_off_phot, switch_off_spec=switch_off_spec, fixed_dust=fixed_dust, use_eline_prior=use_eline_prior)
     output = {}
     nsample = res['chain'].shape[0]
     sample_idx = np.random.choice(np.arange(nsample), size=ncalc, p=res['weights'], replace=False)
@@ -134,7 +136,7 @@ print idx_file_considered
 
 for ii in range(len(idx_file_considered)):
     print result_file_list[idx_file_considered[ii]]
-    obs, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=args.non_param_sfh, n_bins_sfh=args.n_bins_sfh,
+    obs, output = investigate(result_file_list[idx_file_considered[ii]].split('/')[-1], ncalc=ncalc, non_param=args.non_param_sfh, n_bins_sfh=args.n_bins_sfh, dirichlet_sfh=args.dirichlet_sfh,
                               add_neb=args.add_neb, add_duste=args.add_duste, add_jitter=args.add_jitter, add_agn=args.add_agn, fit_continuum=args.fit_continuum, use_eline_prior=args.use_eline_prior,
                               switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec, fixed_dust=args.fixed_dust)
     output['file_name'] = result_file_list[idx_file_considered[ii]].split('/')[-1]
