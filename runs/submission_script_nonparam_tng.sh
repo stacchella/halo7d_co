@@ -11,7 +11,6 @@
 ### memory per cpu, in MB
 #SBATCH --mem-per-cpu=10000
 ### constraints
-#SBATCH --constraint=intel
 ### Job name
 #SBATCH -J 'tng'
 ### output and error logs
