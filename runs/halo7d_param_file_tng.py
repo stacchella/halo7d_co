@@ -150,7 +150,7 @@ def build_obs(index_galaxy=0, filterset=None,
 
     # we need the models to make a mock.
     # for the SPS we use the Tabular SFH from TNG
-    sps = build_sps(index_galaxy, **kwargs)
+    sps = build_sps(index_galaxy=index_galaxy, **kwargs)
     assert len(sps.tabular_time) > 0
     model = build_model(**kwargs)
 
