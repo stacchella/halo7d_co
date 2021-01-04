@@ -18,7 +18,6 @@ from prospect.likelihood.kernels import Uncorrelated
 
 path_wdir = os.environ['WDIR_halo7d']
 filter_folder = path_wdir + '/data/filters/'
-filter_lsf = path_wdir + '/data/galaxy_LSF_output/'
 
 
 # function to build mock
@@ -55,7 +54,7 @@ def build_mock(sps, model,
     mock = {"filters": None, "maggies": None, "wavelength": None, "spectrum": None}
     mock['wavelength'] = wavelength
     if filterset is not None:
-        mock['filters'] = load_filters(filterset)
+        mock['filters'] = load_filters(filternames, directory=filter_folder)
 
     # Now we get any mock params from the kwargs dict
     params = {}
