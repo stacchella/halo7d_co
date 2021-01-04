@@ -382,7 +382,8 @@ def build_sps(zcontinuous=1, compute_vega_mags=False, illustris_sfh_file="", ind
     # poplulate sps object
     sps = TabularBasis(zcontinuous=zcontinuous,
                        compute_vega_mags=compute_vega_mags)
-    sps.tabular_time = tuniv - time[inds]
+    # sps.tabular_time = tuniv - time[inds]
+    sps.tabular_time = time[inds]
     sps.tabular_sfr = sfr[inds]
     sps.mtot = np.trapz(sfr[inds], time[inds]) * 1e9
 
