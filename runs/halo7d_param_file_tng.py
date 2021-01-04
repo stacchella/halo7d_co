@@ -139,13 +139,11 @@ def build_obs(index_galaxy=0, filterset=None,
 
     # filter list
     if filterset is None:
-        filterset = ['f160w_goodsn', 'u_goodsn', 'f435w_goodsn', 'b_goodsn', 'g_goodsn', 'v_goodsn', 'f606w_goodsn',
-                     'r_goodsn', 'rs_goodsn', 'i_goodsn', 'f775w_goodsn', 'z_goodsn', 'f850lp_goodsn', 'f125w_goodsn',
-                     'j_goodsn', 'f140w_goodsn', 'h_goodsn', 'ks_goodsn', 'irac1_goodsn', 'irac2_goodsn', 'irac3_goodsn',
-                     'irac4_goodsn', 'mips_24um_goodsn', 'rp_goodsn', 'ip_goodsn', 'f814w_goodsn', 'zp_goodsn', 'uvista_y_goodsn',
-                     'j1_goodsn', 'j2_goodsn', 'j3_goodsn', 'uvista_j_goodsn', 'h1_goodsn', 'h2_goodsn', 'uvista_h_goodsn', 'k_goodsn',
-                     'uvista_ks_goodsn', 'ia427_goodsn', 'ia464_goodsn', 'ia484_goodsn', 'ia505_goodsn', 'ia527_goodsn', 'ia574_goodsn',
-                     'ia624_goodsn', 'ia679_goodsn', 'ia709_goodsn', 'ia738_goodsn', 'ia767_goodsn', 'ia827_goodsn']
+        filterset = ['f160w_goodsn', 'u_goodsn', 'f435w_goodsn', 'b_goodsn', 'g_goodsn',
+                     'v_goodsn', 'f606w_goodsn', 'r_goodsn', 'rs_goodsn', 'i_goodsn',
+                     'f775w_goodsn', 'z_goodsn', 'f850lp_goodsn', 'f125w_goodsn',
+                     'irac1_goodsn', 'irac2_goodsn', 'irac3_goodsn', 'irac4_goodsn',
+                     'mips_24um_goodsn']
 
     # we need the models to make a mock.
     # for the SPS we use the Tabular SFH from TNG
