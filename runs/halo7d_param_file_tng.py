@@ -3,6 +3,7 @@ import sys
 import os
 import numpy as np
 import h5py
+from copy import deepcopy
 from sedpy.observate import load_filters
 from prospect import prospect_args
 from prospect.fitting import fit_model, lnprobfn
