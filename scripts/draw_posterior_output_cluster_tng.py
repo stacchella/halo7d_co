@@ -29,7 +29,7 @@ filter_folder = path_wdir + '/data/filters/'
 # load parameter file
 
 sys.path.append(path_wdir + 'runs/')
-import halo7d_param_file as param_file
+import halo7d_param_file_tng as param_file
 
 
 # pars args
