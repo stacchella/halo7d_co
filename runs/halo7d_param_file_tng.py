@@ -528,7 +528,7 @@ if __name__ == '__main__':
     if args.debug:
         sys.exit()
 
-    hfile = path_wdir + "results/{0}_idx_{1}_mcmc.h5".format(args.outfile, int(args.index_galaxy)-1)
+    hfile = path_wdir + "results/{0}_idx_{1}_mcmc.h5".format(args.outfile, int(args.index_galaxy))
     output = fit_model(obs, model, sps, noise, lnprobfn=lnprobfn, **run_params)
 
     print('writing hdf5 file now...')
