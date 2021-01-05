@@ -370,7 +370,6 @@ class TabularBasis(SSPBasis):
     """Subclass of :py:class:`SSPBasis` that implements a fixed tabular SFH.
     The user must add the `tabular_time`, `tabular_sfr`, and `mtot` attributes
     """
-
     def get_galaxy_spectrum(self, **params):
         """Construct the tabular SFH and feed it to the ``ssp``.
         """
@@ -389,12 +388,10 @@ def extract_sfh(illustris_sfh_file="", index_galaxy=0):
 
 
 def build_sps(zcontinuous=1, compute_vega_mags=False, illustris_sfh_file="", index_galaxy=0, zred=0.0, **extras):
-
     # extract SFH
     time, sfr = extract_sfh(illustris_sfh_file, index_galaxy=index_galaxy)
     tuniv = cosmo.age(zred).value
     inds = slice(0, np.argmin(np.abs(tuniv - time)))
-
     # poplulate sps object
     sps = TabularBasis(zcontinuous=zcontinuous,
                        compute_vega_mags=compute_vega_mags)
@@ -402,7 +399,6 @@ def build_sps(zcontinuous=1, compute_vega_mags=False, illustris_sfh_file="", ind
     sps.tabular_time = time[inds]
     sps.tabular_sfr = sfr[inds]
     sps.mtot = np.trapz(sfr[inds], time[inds]) * 1e9
-
     return sps
 
 
