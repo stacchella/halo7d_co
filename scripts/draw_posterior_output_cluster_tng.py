@@ -146,9 +146,9 @@ for ii in range(len(idx_file_considered)):
     output['tabular_mtot'] = obs['tabular_mtot']
     output['mock_snr_phot'] = obs['mock_snr_phot']
     output['mock_snr_spec'] = obs['mock_snr_spec']
-    chi2_phot, chi2_spec = compute_chi2(obs, output, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec)
-    output['chi2_phot'] = chi2_phot
-    output['chi2_spec'] = chi2_spec
+    # chi2_phot, chi2_spec = compute_chi2(obs, output, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec)
+    # output['chi2_phot'] = chi2_phot
+    # output['chi2_spec'] = chi2_spec
     file_name = path_res + "posterior_draws/" + obs['index_galaxy'] + "_output.pkl"
     if os.path.exists(file_name):
         os.remove(file_name)
