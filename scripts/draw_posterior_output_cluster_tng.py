@@ -140,18 +140,18 @@ for ii in range(len(idx_file_considered)):
                               add_neb=args.add_neb, add_duste=args.add_duste, add_jitter=args.add_jitter, add_agn=args.add_agn, fit_continuum=args.fit_continuum, use_eline_prior=args.use_eline_prior,
                               switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec, fixed_dust=args.fixed_dust)
     output['file_name'] = result_file_list[idx_file_considered[ii]].split('/')[-1]
-    output['ID'] = obs['id_halo7d']
-    output['ra'] = obs['RA']
-    output['dec'] = obs['DEC']
-    output['SN'] = obs['SN_calc']
+    output['index_galaxy'] = obs['index_galaxy']
+    output['tabular_time'] = obs['tabular_time']
+    output['tabular_sfr'] = obs['tabular_sfr']
+    output['tabular_mtot'] = obs['tabular_mtot']
+    output['mock_snr_phot'] = obs['mock_snr_phot']
+    output['mock_snr_spec'] = obs['mock_snr_spec']
     chi2_phot, chi2_spec = compute_chi2(obs, output, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec)
     output['chi2_phot'] = chi2_phot
     output['chi2_spec'] = chi2_spec
-    file_name = path_res + "posterior_draws/" + obs['id_halo7d'] + "_output.pkl"
+    file_name = path_res + "posterior_draws/" + obs['index_galaxy'] + "_output.pkl"
     if os.path.exists(file_name):
         os.remove(file_name)
     f = open(file_name, "w")
     hickle.dump(output, f)
     f.close()
-
-
