@@ -105,7 +105,7 @@ def investigate(file_input, ncalc, non_param, n_bins_sfh, dirichlet_sfh=False, a
 def get_file_ids(number_of_bins, idx_file_key=1.0, **kwargs):
     idx_all_files = range(len(result_file_list))
     idx_bins_all_files = np.array_split(idx_all_files, number_of_bins)
-    print idx_bins_all_files[int(float(idx_file_key))-1]
+    print(idx_bins_all_files[int(float(idx_file_key))-1])
     return(idx_bins_all_files[int(float(idx_file_key))-1])  # -1 since slurm counts from 1 (and not from 0)
 
 
