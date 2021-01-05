@@ -108,8 +108,8 @@ def build_mock(sps, model,
 # function to build obs dictionary
 
 def build_obs(index_galaxy=0, filterset=None,
-              dlambda_spec=2.0, wave_lo=3800, wave_hi=7000.,
-              snr_spec=20., snr_phot=20., add_noise=False, seed=101, **kwargs):
+              dlambda_spec=0.6, wave_lo=3800, wave_hi=7000.,
+              snr_spec=10., snr_phot=20., add_noise=False, seed=101, **kwargs):
     """Load a mock
     :param wave_lo:
         The (restframe) minimum wavelength of the spectrum.
@@ -145,6 +145,11 @@ def build_obs(index_galaxy=0, filterset=None,
                      'f775w_goodsn', 'z_goodsn', 'f850lp_goodsn', 'f125w_goodsn',
                      'irac1_goodsn', 'irac2_goodsn', 'irac3_goodsn', 'irac4_goodsn',
                      'mips_24um_goodsn']
+        snr_phot_vec = np.array([1.0, 0.18587128, 0.58600765, 0.4951298 , 0.73535256,
+                            1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                            1.0, 1.0, 0.70419892, 0.32115486])
+    else:
+        snr_phot_vec = 1.0
 
     # we need the models to make a mock.
     # for the SPS we use the Tabular SFH from TNG
@@ -152,7 +157,7 @@ def build_obs(index_galaxy=0, filterset=None,
     assert len(sps.tabular_time) > 0
     model = build_model(**kwargs)
 
-    mock = build_mock(sps, model, filterset=filterset, snr_phot=snr_phot,
+    mock = build_mock(sps, model, filterset=filterset, snr_phot=snr_phot * snr_phot_vec,
                       wavelength=wavelength, snr_spec=snr_spec,
                       add_noise=add_noise, seed=seed)
     mock['index_galaxy'] = index_galaxy
@@ -251,6 +256,7 @@ def build_model(zred=0.0, non_param_sfh=False, dirichlet_sfh=False, add_duste=Fa
 
     # velocity dispersion
     model_params.update(TemplateLibrary['spectral_smoothing'])
+    model_params["sigma_smooth"]["init"] = 200.0
     model_params["sigma_smooth"]["prior"] = priors.TopHat(mini=40.0, maxi=400.0)
 
     # Change the model parameter specifications based on some keyword arguments
@@ -261,6 +267,7 @@ def build_model(zred=0.0, non_param_sfh=False, dirichlet_sfh=False, add_duste=Fa
         model_params['duste_gamma']['init'] = 0.01
         model_params['duste_gamma']['prior'] = priors.LogUniform(mini=1e-4, maxi=0.1)
         model_params['duste_qpah']['isfree'] = True
+        model_params['duste_qpah']['init'] = 1.0
         model_params['duste_qpah']['prior'] = priors.TopHat(mini=0.5, maxi=7.0)
         model_params['duste_umin']['isfree'] = True
         model_params['duste_umin']['init'] = 1.0
@@ -270,16 +277,19 @@ def build_model(zred=0.0, non_param_sfh=False, dirichlet_sfh=False, add_duste=Fa
         # Allow for the presence of an AGN in the mid-infrared
         model_params.update(TemplateLibrary["agn"])
         model_params['fagn']['isfree'] = True
+        model_params['fagn']['init'] = 1e-4
         model_params['fagn']['prior'] = priors.LogUniform(mini=1e-5, maxi=3.0)
         model_params['agn_tau']['isfree'] = True
+        model_params['agn_tau']['init'] = 10.0
         model_params['agn_tau']['prior'] = priors.LogUniform(mini=5.0, maxi=150.)
 
     if add_neb:
         # Add nebular emission
         model_params.update(TemplateLibrary["nebular"])
         model_params['gas_logu']['isfree'] = True
-        model_params['gas_logu']['init'] = -2.0
+        model_params['gas_logu']['init'] = -1.0
         model_params['gas_logz']['isfree'] = True
+        model_params['gas_logz']['init'] = -0.3
         _ = model_params["gas_logz"].pop("depends_on")
         model_params['nebemlineinspec'] = {'N': 1,
                                            'isfree': False,
@@ -338,6 +348,11 @@ def build_model(zred=0.0, non_param_sfh=False, dirichlet_sfh=False, add_duste=Fa
                                        "isfree": True,
                                        "init": 1.0,
                                        "prior": priors.TopHat(mini=1.0, maxi=5.0)}
+
+    # Alter parameter values based on keyword arguments
+    for p in list(model_params.keys()):
+        if (p in kwargs):
+            model_params[p]["init"] = kwargs[p]
 
     # Now instantiate the model using this new dictionary of parameter specifications
     model = PolySpecModel(model_params)
@@ -418,12 +433,7 @@ if __name__ == '__main__':
     parser = prospect_args.get_parser()
 
     # - Add custom arguments -
-    parser.add_argument('--illustris_sfh_file', type=str, default=path_wdir + "data/galaxies_tng100_059_SFH30.hdf5",
-                        help="Name of TNG file.")
-    parser.add_argument('--index_galaxy', type=int, default=0,
-                        help="Zero-index row number in the table to fit.")
-    parser.add_argument('--zred', type=np.float, default=0.7,
-                        help="Redshift of mock.")
+    # Model setup
     parser.add_argument('--non_param_sfh', action="store_true",
                         help="If set, fit non-parametric star-formation history model.")
     parser.add_argument('--dirichlet_sfh', action="store_true",
@@ -438,21 +448,68 @@ if __name__ == '__main__':
                         help="If set, add dust emission to the model.")
     parser.add_argument('--add_agn', action="store_true",
                         help="If set, add agn emission to the model.")
-    parser.add_argument('--snr_spec', type=np.float, default=10.0,
-                        help="SNR of spectroscopy.")
-    parser.add_argument('--snr_phot', type=np.float, default=20.0,
-                        help="SNR of photometry.")
     parser.add_argument('--use_eline_prior', action="store_true",
                         help="If set, use EL prior from cloudy.")
     parser.add_argument('--add_jitter', action="store_true",
                         help="If set, jitter noise.")
     parser.add_argument('--fixed_dust', action="store_true",
                         help="If set, fix dust to Calzetti and add tight Z prior.")
+    # Mock data construction
+    parser.add_argument('--illustris_sfh_file', type=str, default=path_wdir + "data/galaxies_tng100_059_SFH30.hdf5",
+                        help="File with the TNG SFH file.")
+    parser.add_argument('--index_galaxy', type=int, default=0,
+                        help="Zero-index row number in the table to fit.")
+    parser.add_argument('--snr_phot', type=float, default=20.0,
+                        help="S/N ratio for the mock photometry.")
+    parser.add_argument('--snr_spec', type=float, default=10.0,
+                        help="S/N ratio for the mock spectroscopy.")
+    parser.add_argument('--filterset', type=str, nargs="*", default=[],
+                        help="Names of filters through which to produce photometry.")
     parser.add_argument('--add_noise', action="store_true",
-                        help="Add noise to mock.")
+                        help="If set, noise up the mock.")
+    parser.add_argument('--draw_snr', action="store_true",
+                        help="If set, SNR will be drawn from a truncated normal.")
+    parser.add_argument('--seed', type=int, default=101,
+                        help=("RNG seed for the noise. Negative values result in random noise."))
+    # Mock spectrum parameters
+    parser.add_argument('--wave_lo', type=float, default=3800.,
+                        help="Minimum (restframe) wavelength for the mock spectrum")
+    parser.add_argument('--wave_hi', type=float, default=7200.,
+                        help="Minimum (restframe) wavelength for the mock spectrum")
+    parser.add_argument('--dlambda_spec', type=float, default=2.0,
+                        help="Minimum (restframe) wavelength for the mock spectrum")
+    parser.add_argument('--add_realism', action="store_true",
+                        help="If set, Add realistic noise and instrumental dispersion.")
+    parser.add_argument('--sdss_filename', type=str, default="",
+                        help="Full path to the SDSS spectral data file for adding realism.")
+    parser.add_argument('--mask_elines', action="store_true",
+                        help="If set, mask windows around bright emission lines")
+    # Mock physical parameters
+    parser.add_argument('--zred', type=float, default=0.7,
+                        help="Redshift for the model (and mock).")
+    parser.add_argument('--logmass', type=float, default=11.0,
+                        help="Stellar mass of the mock; solar masses formed")
+    parser.add_argument('--dust2', type=float, default=0.3,
+                        help="Dust attenuation V band optical depth")
+    parser.add_argument('--logzsol', type=float, default=-0.3,
+                        help="Metallicity of the mock; log(Z/Z_sun)")
+    parser.add_argument('--duste_umin', type=float, default=2.0,
+                        help="Dust heating intensity")
+    parser.add_argument('--duste_qpah', type=float, default=1.0,
+                        help="Dust heating intensity")
 
     args = parser.parse_args()
     run_params = vars(args)
+
+    if run_params['draw_snr']:
+        import scipy.stats as stats
+        print('Draw SNR.')
+        lower, upper = 5.0, 20.0
+        sigma = 5.0
+        snr_spec_dist = stats.truncnorm((lower - run_params['snr_spec']) / sigma, (upper - run_params['snr_spec']) / sigma, loc=run_params['snr_spec'], scale=sigma)
+        snr_phot_dist = stats.truncnorm((lower - run_params['snr_phot']) / sigma, (upper - run_params['snr_phot']) / sigma, loc=run_params['snr_phot'], scale=sigma)
+        run_params['snr_spec'] = snr_spec_dist.rvs(1)[0]
+        run_params['snr_phot'] = snr_phot_dist.rvs(1)[0]
 
     # add in dynesty settings
     run_params['dynesty'] = True

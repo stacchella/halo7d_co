@@ -20,7 +20,7 @@
 #SBATCH --mail-user=sandro.tacchella@cfa.harvard.edu
 module load python/2.7.14-fasrc01
 source activate pro
-srun -n 1 python $DIR_CONROY/halo7d_co/scripts/draw_posterior_output_cluster.py \
+srun -n 1 python $DIR_CONROY/halo7d_co/scripts/draw_posterior_output_cluster_tng.py \
 --number_of_bins=10 \
 --idx_file_key="${SLURM_ARRAY_TASK_ID}" \
 --path_results="nonparam_tng/" \
