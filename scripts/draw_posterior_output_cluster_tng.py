@@ -141,11 +141,7 @@ for ii in range(len(idx_file_considered)):
                               switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec, fixed_dust=args.fixed_dust)
     output['file_name'] = result_file_list[idx_file_considered[ii]].split('/')[-1]
     output['index_galaxy'] = obs['index_galaxy']
-    output['tabular_time'] = obs['tabular_time']
-    output['tabular_sfr'] = obs['tabular_sfr']
-    output['tabular_mtot'] = obs['tabular_mtot']
-    output['mock_snr_phot'] = obs['mock_snr_phot']
-    output['mock_snr_spec'] = obs['mock_snr_spec']
+    output['obs_input'] = obs
     # chi2_phot, chi2_spec = compute_chi2(obs, output, switch_off_phot=args.switch_off_phot, switch_off_spec=args.switch_off_spec)
     # output['chi2_phot'] = chi2_phot
     # output['chi2_spec'] = chi2_spec
