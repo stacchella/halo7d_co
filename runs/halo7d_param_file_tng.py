@@ -139,7 +139,7 @@ def build_obs(index_galaxy=0, filterset=None,
     wavelength = np.arange(wave_lo, wave_hi, dlambda_spec) * a
 
     # filter list
-    if filterset is None:
+    if (filterset == []):
         filterset = ['f160w_goodsn', 'u_goodsn', 'f435w_goodsn', 'b_goodsn', 'g_goodsn',
                      'v_goodsn', 'f606w_goodsn', 'r_goodsn', 'rs_goodsn', 'i_goodsn',
                      'f775w_goodsn', 'z_goodsn', 'f850lp_goodsn', 'f125w_goodsn',
