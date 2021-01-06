@@ -18,8 +18,10 @@ from tqdm import tqdm
 # define paths
 
 path_wdir = os.environ['WDIR_halo7d']
-path_results = path_wdir + 'results/nonparam_10/posterior_draws/'
-name_output_file = 'summary_nonparam_10_run.pkl'
+path_results = path_wdir + 'results/nonparam_tng/posterior_draws/'
+name_output_file = 'summary_nonparam_tng_run.pkl'
+#identifier = 'ID'
+identifier = 'index_galaxy'
 
 result_file_list = glob.glob(path_results + '*_output.pkl')
 
@@ -30,7 +32,7 @@ output_condensed = {}
 
 for ii_f in tqdm(range(len(result_file_list))):
     output = hickle.load(result_file_list[ii_f])
-    output_condensed[output['ID']] = output
+    output_condensed[output[identifier]] = output
 
 
 # save output

@@ -5,7 +5,7 @@
 ### Requested number of nodes
 #SBATCH -N 1
 ### Requested computing time in minutes
-#SBATCH -t 10080
+#SBATCH -t 2080
 ### Partition or queue name
 #SBATCH -p conroy,itc_cluster,hernquist,shared
 ### memory per cpu, in MB

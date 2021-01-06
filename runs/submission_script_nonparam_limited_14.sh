@@ -5,7 +5,7 @@
 ### Requested number of nodes
 #SBATCH -N 1
 ### Requested computing time in minutes
-#SBATCH -t 14000
+#SBATCH -t 20000
 ### Partition or queue name
 #SBATCH -p conroy
 ### memory per cpu, in MB
