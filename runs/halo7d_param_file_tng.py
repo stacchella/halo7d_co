@@ -491,7 +491,7 @@ if __name__ == '__main__':
                         help="Metallicity of the mock; log(Z/Z_sun)")
     parser.add_argument('--duste_umin', type=float, default=2.0,
                         help="Dust heating intensity")
-    parser.add_argument('--duste_qpah', type=float, default=1.0,
+    parser.add_argument('--duste_qpah', type=float, default=2.0,
                         help="Dust heating intensity")
 
     args = parser.parse_args()
