@@ -153,7 +153,7 @@ def build_obs(index_galaxy=0, filterset=None,
 
     # we need the models to make a mock.
     # for the SPS we use the Tabular SFH from TNG
-    sps = build_sps(index_galaxy=index_galaxy, **kwargs)
+    sps = build_sps(index_galaxy=index_galaxy, use_table=True, **kwargs)
     assert len(sps.tabular_time) > 0
     model = build_model(**kwargs)
 
@@ -387,18 +387,23 @@ def extract_sfh(illustris_sfh_file="", index_galaxy=0):
     return time, sfr
 
 
-def build_sps(zcontinuous=1, compute_vega_mags=False, illustris_sfh_file="", index_galaxy=0, zred=0.0, **extras):
-    # extract SFH
-    time, sfr = extract_sfh(illustris_sfh_file, index_galaxy=index_galaxy)
-    tuniv = cosmo.age(zred).value
-    inds = slice(0, np.argmin(np.abs(tuniv - time)))
-    # poplulate sps object
-    sps = TabularBasis(zcontinuous=zcontinuous,
-                       compute_vega_mags=compute_vega_mags)
-    # sps.tabular_time = tuniv - time[inds]
-    sps.tabular_time = time[inds]
-    sps.tabular_sfr = sfr[inds]
-    sps.mtot = np.trapz(sfr[inds], time[inds]) * 1e9
+def build_sps(zcontinuous=1, use_table=False, compute_vega_mags=False, illustris_sfh_file="", index_galaxy=0, zred=0.0, **extras):
+    if use_table:
+        # extract SFH
+        time, sfr = extract_sfh(illustris_sfh_file, index_galaxy=index_galaxy)
+        tuniv = cosmo.age(zred).value
+        inds = slice(0, np.argmin(np.abs(tuniv - time)))
+        # poplulate sps object
+        sps = TabularBasis(zcontinuous=zcontinuous,
+                           compute_vega_mags=compute_vega_mags)
+        # sps.tabular_time = tuniv - time[inds]
+        sps.tabular_time = time[inds]
+        sps.tabular_sfr = sfr[inds]
+        sps.mtot = np.trapz(sfr[inds], time[inds]) * 1e9
+    else:
+        from prospect.sources import FastStepBasis
+        sps = FastStepBasis(zcontinuous=zcontinuous,
+                            compute_vega_mags=compute_vega_mags)
     return sps
 
 
@@ -470,9 +475,9 @@ if __name__ == '__main__':
     # Mock spectrum parameters
     parser.add_argument('--wave_lo', type=float, default=3800.,
                         help="Minimum (restframe) wavelength for the mock spectrum")
-    parser.add_argument('--wave_hi', type=float, default=7200.,
+    parser.add_argument('--wave_hi', type=float, default=5400.,
                         help="Minimum (restframe) wavelength for the mock spectrum")
-    parser.add_argument('--dlambda_spec', type=float, default=2.0,
+    parser.add_argument('--dlambda_spec', type=float, default=0.35,
                         help="Minimum (restframe) wavelength for the mock spectrum")
     parser.add_argument('--add_realism', action="store_true",
                         help="If set, Add realistic noise and instrumental dispersion.")

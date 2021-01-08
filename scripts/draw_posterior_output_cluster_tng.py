@@ -147,6 +147,7 @@ for ii in range(len(idx_file_considered)):
     output['mock_snr_phot'] = obs['mock_snr_phot']
     output['mock_snr_spec'] = obs['mock_snr_spec']
     output['true_spectrum'] = obs['true_spectrum']
+    output['wavelength'] = obs['wavelength']
     output['true_maggies'] = obs['true_maggies']
     output['mock_params'] = obs['mock_params']
     output['maggies'] = obs['maggies']
