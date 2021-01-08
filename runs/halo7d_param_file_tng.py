@@ -524,21 +524,25 @@ if __name__ == '__main__':
 
     obs, model, sps, noise = build_all(**run_params)
     run_params["param_file"] = __file__
+    print('run_params', run_params)
+    print('obs', obs)
+    print('model', model)
+    print('sps', sps)
 
-    if args.debug:
-        sys.exit()
+    # if args.debug:
+    #     sys.exit()
 
-    hfile = path_wdir + "results/{0}_idx_{1}_mcmc.h5".format(args.outfile, int(args.index_galaxy))
-    output = fit_model(obs, model, sps, noise, lnprobfn=lnprobfn, **run_params)
+    # hfile = path_wdir + "results/{0}_idx_{1}_mcmc.h5".format(args.outfile, int(args.index_galaxy))
+    # output = fit_model(obs, model, sps, noise, lnprobfn=lnprobfn, **run_params)
 
-    print('writing hdf5 file now...')
+    # print('writing hdf5 file now...')
 
-    writer.write_hdf5(hfile, run_params, model, obs,
-                      output["sampling"][0], output["optimization"][0],
-                      tsample=output["sampling"][1],
-                      toptimize=output["optimization"][1])
+    # writer.write_hdf5(hfile, run_params, model, obs,
+    #                   output["sampling"][0], output["optimization"][0],
+    #                   tsample=output["sampling"][1],
+    #                   toptimize=output["optimization"][1])
 
-    try:
-        hfile.close()
-    except(AttributeError):
-        pass
+    # try:
+    #     hfile.close()
+    # except(AttributeError):
+    #     pass
