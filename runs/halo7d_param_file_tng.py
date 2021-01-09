@@ -4,6 +4,7 @@ import os
 import numpy as np
 import h5py
 from copy import deepcopy
+import scipy.stats as stats
 from sedpy.observate import load_filters
 from prospect import prospect_args
 from prospect.fitting import fit_model, lnprobfn
@@ -493,6 +494,8 @@ if __name__ == '__main__':
                         help="Redshift for the model (and mock).")
     parser.add_argument('--logmass', type=float, default=11.0,
                         help="Stellar mass of the mock; solar masses formed")
+    parser.add_argument('--draw_params', action="store_true",
+                        help="If set, draws parameters randomly from distribution.")
     parser.add_argument('--dust2', type=float, default=0.3,
                         help="Dust attenuation V band optical depth")
     parser.add_argument('--logzsol', type=float, default=-0.3,
@@ -506,14 +509,25 @@ if __name__ == '__main__':
     run_params = vars(args)
 
     if run_params['draw_snr']:
-        import scipy.stats as stats
         print('Draw SNR.')
-        lower, upper = 5.0, 20.0
+        lower_sp, upper_sp = 5.0, 20.0
+        lower_ph, upper_ph = 15.0, 20.0
         sigma = 5.0
-        snr_spec_dist = stats.truncnorm((lower - run_params['snr_spec']) / sigma, (upper - run_params['snr_spec']) / sigma, loc=run_params['snr_spec'], scale=sigma)
-        snr_phot_dist = stats.truncnorm((lower - run_params['snr_phot']) / sigma, (upper - run_params['snr_phot']) / sigma, loc=run_params['snr_phot'], scale=sigma)
+        snr_spec_dist = stats.truncnorm((lower_sp - run_params['snr_spec']) / sigma, (upper_sp - run_params['snr_spec']) / sigma, loc=run_params['snr_spec'], scale=sigma)
+        snr_phot_dist = stats.truncnorm((lower_ph - run_params['snr_phot']) / sigma, (upper_ph - run_params['snr_phot']) / sigma, loc=run_params['snr_phot'], scale=sigma)
         run_params['snr_spec'] = snr_spec_dist.rvs(1)[0]
         run_params['snr_phot'] = snr_phot_dist.rvs(1)[0]
+
+    if run_params['draw_params']:
+        print('Draw params.')
+        logzsol_dist = stats.truncnorm((-0.5 - 0.0) / 0.1, (0.19 - 0.0) / 0.1, loc=0.0, scale=0.1)
+        run_params['logzsol'] = logzsol_dist.rvs(1)[0]
+        dust2_dist = stats.truncnorm((0.0 - 0.2) / 0.2, (0.6 - 0.2) / 0.2, loc=0.2, scale=0.2)
+        run_params['dust2'] = dust2_dist.rvs(1)[0]
+        dust_index_dist = stats.truncnorm((-1.0 - 0.0) / 0.4, (0.4 - 0.0) / 0.4, loc=0.0, scale=0.4)
+        run_params['dust_index'] = dust_index_dist.rvs(1)[0]
+        sigma_smooth_dist = stats.truncnorm((100.0 - 200.0) / 50.0, (250.0 - 200.0) / 50.0, loc=200.0, scale=50.0)
+        run_params['sigma_smooth'] = sigma_smooth_dist.rvs(1)[0]
 
     # add in dynesty settings
     run_params['dynesty'] = True

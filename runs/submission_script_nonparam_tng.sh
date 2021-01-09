@@ -29,6 +29,7 @@ srun -n 1 python $DIR_CONROY/halo7d_co/runs/halo7d_param_file_tng.py \
 --draw_snr \
 --snr_spec=14.0 \
 --snr_phot=20.0 \
+--draw_params \
 --non_param_sfh \
 --n_bins_sfh=10 \
 --add_neb \
