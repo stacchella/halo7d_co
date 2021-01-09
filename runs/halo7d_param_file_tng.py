@@ -467,7 +467,7 @@ if __name__ == '__main__':
                         help="Zero-index row number in the table to fit.")
     parser.add_argument('--snr_phot', type=float, default=20.0,
                         help="S/N ratio for the mock photometry.")
-    parser.add_argument('--snr_spec', type=float, default=10.0,
+    parser.add_argument('--snr_spec', type=float, default=14.0,
                         help="S/N ratio for the mock spectroscopy.")
     parser.add_argument('--filterset', type=str, nargs="*", default=[],
                         help="Names of filters through which to produce photometry.")
