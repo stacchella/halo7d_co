@@ -108,7 +108,7 @@ def build_mock(sps, model,
 # function to build obs dictionary
 
 def build_obs(index_galaxy=0, filterset=None,
-              dlambda_spec=0.6, wave_lo=3800, wave_hi=7000.,
+              dlambda_spec=0.35, wave_lo=3800, wave_hi=5600.,
               snr_spec=10., snr_phot=20., add_noise=False, seed=101, **kwargs):
     """Load a mock
     :param wave_lo:
@@ -480,14 +480,12 @@ if __name__ == '__main__':
     # Mock spectrum parameters
     parser.add_argument('--wave_lo', type=float, default=3800.,
                         help="Minimum (restframe) wavelength for the mock spectrum")
-    parser.add_argument('--wave_hi', type=float, default=5400.,
+    parser.add_argument('--wave_hi', type=float, default=5600.,
                         help="Minimum (restframe) wavelength for the mock spectrum")
     parser.add_argument('--dlambda_spec', type=float, default=0.35,
                         help="Minimum (restframe) wavelength for the mock spectrum")
     parser.add_argument('--add_realism', action="store_true",
                         help="If set, Add realistic noise and instrumental dispersion.")
-    parser.add_argument('--sdss_filename', type=str, default="",
-                        help="Full path to the SDSS spectral data file for adding realism.")
     parser.add_argument('--mask_elines', action="store_true",
                         help="If set, mask windows around bright emission lines")
     # Mock physical parameters
