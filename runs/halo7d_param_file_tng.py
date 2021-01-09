@@ -177,8 +177,8 @@ def build_obs(index_galaxy=0, filterset=None,
 # Model Definition
 # --------------
 
-def build_model(zred=0.0, non_param_sfh=False, dirichlet_sfh=False, add_duste=False, add_neb=False, add_agn=False, switch_off_mix=False, marginalize_neb=True,
-                n_bins_sfh=8, use_eline_prior=False, add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, fixed_dust=False, **kwargs):
+def build_model(zred=0.7, non_param_sfh=False, dirichlet_sfh=False, add_duste=False, add_neb=False, add_agn=False, switch_off_mix=False, marginalize_neb=True,
+                n_bins_sfh=10, use_eline_prior=False, add_jitter=False, fit_continuum=False, switch_off_phot=False, switch_off_spec=False, fixed_dust=False, **kwargs):
     """Construct a model.  This method defines a number of parameter
     specification dictionaries and uses them to initialize a
     `models.sedmodel.SedModel` object.

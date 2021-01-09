@@ -72,6 +72,7 @@ run_params = {'number_of_bins': args.number_of_bins,  # this gives number of cor
 
 path_res = path_wdir + 'results/' + args.path_results
 ncalc = args.ncalc
+mock_redshift = 0.7
 
 
 # define functions
@@ -94,7 +95,7 @@ def investigate(file_input, ncalc, non_param, n_bins_sfh, dirichlet_sfh=False, a
     print file_input
     # read results
     res, obs, mod, sps = read_results(file_input)
-    mod = param_file.build_model(non_param_sfh=non_param, n_bins_sfh=n_bins_sfh, dirichlet_sfh=dirichlet_sfh, add_duste=add_duste, add_neb=add_neb, add_jitter=add_jitter, add_agn=add_agn, fit_continuum=fit_continuum, switch_off_phot=switch_off_phot, switch_off_spec=switch_off_spec, fixed_dust=fixed_dust, use_eline_prior=use_eline_prior)
+    mod = param_file.build_model(zred=mock_redshift, non_param_sfh=non_param, n_bins_sfh=n_bins_sfh, dirichlet_sfh=dirichlet_sfh, add_duste=add_duste, add_neb=add_neb, add_jitter=add_jitter, add_agn=add_agn, fit_continuum=fit_continuum, switch_off_phot=switch_off_phot, switch_off_spec=switch_off_spec, fixed_dust=fixed_dust, use_eline_prior=use_eline_prior)
     output = {}
     nsample = res['chain'].shape[0]
     sample_idx = np.random.choice(np.arange(nsample), size=ncalc, p=res['weights'], replace=False)
