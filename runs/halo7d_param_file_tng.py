@@ -138,6 +138,11 @@ def build_obs(index_galaxy=0, filterset=None,
     a = 1 + kwargs.get("zred", 0.0)
     wavelength = np.arange(wave_lo, wave_hi, dlambda_spec) * a
 
+    # get noise of spectrum
+    snr_profile = np.load(path_wdir + 'data/snr_profile.npy')
+    snr_vec = np.interp(wavelength, snr_profile[0], snr_profile[1], left=1e-3, right=1e-3)
+    snr_spec = snr_spec * snr_vec
+
     # filter list
     if (filterset == []):
         filterset = ['f160w_goodsn', 'u_goodsn', 'f435w_goodsn', 'b_goodsn', 'g_goodsn',
