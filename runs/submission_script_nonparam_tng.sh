@@ -7,10 +7,11 @@
 ### Requested computing time in minutes
 #SBATCH -t 10080
 ### Partition or queue name
-#SBATCH -p conroy,itc_cluster,hernquist,shared
+#SBATCH -p conroy,itc_cluster,hernquist,shared,conroy_priority
 ### memory per cpu, in MB
 #SBATCH --mem-per-cpu=10000
 ### constraints
+#SBATCH --constraint=intel
 ### Job name
 #SBATCH -J 'tng'
 ### output and error logs
