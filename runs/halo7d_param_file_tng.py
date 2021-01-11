@@ -170,6 +170,7 @@ def build_obs(index_galaxy=0, filterset=None,
     mock['tabular_time'] = sps.tabular_time.copy()
     mock['tabular_sfr'] = sps.tabular_sfr.copy()
     mock['tabular_mtot'] = sps.mtot
+    mock['catsh_id'] = sps.id
 
     return mock
 
