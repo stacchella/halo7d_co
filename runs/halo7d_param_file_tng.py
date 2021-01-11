@@ -387,7 +387,7 @@ class TabularBasis(SSPBasis):
         return wave, spec / self.mtot, self.ssp.stellar_mass / self.mtot
 
 
-def extract_sfh(illustris_sfh_file="", index_galaxy=0, mass_limit=[10.5, 12.0]):
+def extract_sfh(illustris_sfh_file="", index_galaxy=0, mass_limit=[10.0, 12.0]):
     data = h5py.File(illustris_sfh_file, 'r')
     time = data['info']['sfh_tbins'][:]
     mass_list = np.log10(data['catsh_SubhaloMassType'][:, 4])
