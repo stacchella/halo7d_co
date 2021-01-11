@@ -386,17 +386,20 @@ class TabularBasis(SSPBasis):
         return wave, spec / self.mtot, self.ssp.stellar_mass / self.mtot
 
 
-def extract_sfh(illustris_sfh_file="", index_galaxy=0):
+def extract_sfh(illustris_sfh_file="", index_galaxy=0, mass_limit=[10.5, 12.0]):
     data = h5py.File(illustris_sfh_file, 'r')
     time = data['info']['sfh_tbins'][:]
-    sfr = data['sfh_insitu_sfr'][:][index_galaxy] + data['sfh_exsitu_sfr'][:][index_galaxy]
-    return time, sfr
+    mass_list = np.log10(data['catsh_SubhaloMassType'][:, 4])
+    idx_choice = (mass_list > mass_limit[0]) & (mass_list < mass_limit[1])
+    sfr = data['sfh_insitu_sfr'][:][idx_choice][index_galaxy] + data['sfh_exsitu_sfr'][:][idx_choice][index_galaxy]
+    ID = data['catsh_id'][:][idx_choice][index_galaxy]
+    return time, sfr, ID
 
 
 def build_sps(zcontinuous=1, use_table=False, compute_vega_mags=False, illustris_sfh_file="", index_galaxy=0, zred=0.0, **extras):
     if use_table:
         # extract SFH
-        time, sfr = extract_sfh(illustris_sfh_file, index_galaxy=index_galaxy)
+        time, sfr, ID = extract_sfh(illustris_sfh_file, index_galaxy=index_galaxy)
         tuniv = cosmo.age(zred).value
         inds = slice(0, np.argmin(np.abs(tuniv - time)))
         # poplulate sps object
@@ -406,6 +409,7 @@ def build_sps(zcontinuous=1, use_table=False, compute_vega_mags=False, illustris
         sps.tabular_time = time[inds]
         sps.tabular_sfr = sfr[inds]
         sps.mtot = np.trapz(sfr[inds], time[inds]) * 1e9
+        sps.id = ID
     else:
         from prospect.sources import FastStepBasis
         sps = FastStepBasis(zcontinuous=zcontinuous,
@@ -506,6 +510,7 @@ if __name__ == '__main__':
                         help="Dust heating intensity")
 
     args = parser.parse_args()
+    args.index_galaxy -= 1
     run_params = vars(args)
 
     if run_params['draw_snr']:
